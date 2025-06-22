@@ -1,6 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
@@ -17,6 +17,38 @@ import Register from './components/auth/Register';
 import AnnonceDetails from './components/annonces/AnnonceDetails';
 import DemandeDetails from './components/demandes/DemandDetails';
 import AnnonceForm from './components/annonces/AnnonceForm';
+import { Toaster } from 'react-hot-toast';
+
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    // You can add a loading spinner here
+    return <div>Chargement...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
+
+const AdminRoute = ({ children }) => {
+  const { isAuthenticated, user, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return <div>Chargement...</div>;
+  }
+
+  if (!isAuthenticated || user.role !== 'admin') {
+    return <Navigate to="/dashboard" state={{ from: location }} replace />;
+  }
+  
+  return children;
+}
 
 function App() {
   return (
@@ -29,24 +61,31 @@ function App() {
               {/* <Sidebar /> */}
               <main className="flex-1 p-4 bg-gray-50">
                 <Routes>
+                  {/* Routes Publiques */}
                   <Route path="/" element={<Home />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/annonces" element={<Annonces />} />
-                  <Route path="/annonces/:id" element={<AnnonceDetails />} />
-                  <Route path="/demandes" element={<Demandes />} />
-                  <Route path="/demandes/:id" element={<DemandeDetails />} />
-                  <Route path="/my-annonces" element={<MyAnnonces />} />
-                  <Route path="/admin" element={<Admin />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
-                  <Route path="/create-annonce" element={<AnnonceForm />} />
-                  <Route path="/edit-annonce/:id" element={<AnnonceForm />} />
+                  <Route path="/annonces" element={<Annonces />} />
+                  <Route path="/annonces/:id" element={<AnnonceDetails />} />
+                  
+                  {/* Routes Protégées */}
+                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/demandes" element={<ProtectedRoute><Demandes /></ProtectedRoute>} />
+                  <Route path="/demandes/:id" element={<ProtectedRoute><DemandeDetails /></ProtectedRoute>} />
+                  <Route path="/my-annonces" element={<ProtectedRoute><MyAnnonces /></ProtectedRoute>} />
+                  <Route path="/create-annonce" element={<ProtectedRoute><AnnonceForm /></ProtectedRoute>} />
+                  <Route path="/edit-annonce/:id" element={<ProtectedRoute><AnnonceForm /></ProtectedRoute>} />
+
+                  {/* Routes Admin */}
+                  <Route path="/admin/*" element={<AdminRoute><Admin /></AdminRoute>} />
+                  
                   <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
               </main>
             </div>
             <Footer />
+            <Toaster position="top-center" reverseOrder={false} />
           </div>
         </Router>
       </SocketProvider>

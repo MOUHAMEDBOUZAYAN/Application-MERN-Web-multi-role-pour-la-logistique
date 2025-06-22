@@ -77,11 +77,11 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-black">
                 Connectez-vous pour vos 
                 <span className="text-yellow-400"> transports</span>
               </h1>
-              <p className="text-xl text-white leading-relaxed">
+              <p className="text-xl text-black font-bold  leading-relaxed">
                 La plateforme qui met en relation conducteurs et expéditeurs pour un transport de marchandises efficace et sécurisé au Maroc.
               </p>
               
@@ -105,13 +105,13 @@ const Home = () => {
                   <>
                     <Link
                       to="/dashboard"
-                      className="bg-white text-primary-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 text-center"
+                      className="border-2 border-black text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-black hover:text-white transition-colors duration-200 text-center"
                     >
                       Mon Tableau de Bord
                     </Link>
                     <Link
                       to="/announcements"
-                      className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-primary-600 transition-colors duration-200 text-center"
+                      className="border-2  text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-black hover:text-white transition-colors duration-200 text-center"
                     >
                       Parcourir les Annonces
                     </Link>
@@ -237,24 +237,24 @@ const Home = () => {
       {/* CTA Section */}
       <section className="py-20 bg-primary-600 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-black">
             Prêt à Commencer ?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-black mb-8">
             Rejoignez des milliers d'utilisateurs qui font confiance à TransportConnect pour leurs transports quotidiens.
           </p>
           
           {!isAuthenticated ? (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center text-black font-bold">
               <Link
                 to="/register"
-                className="bg-white text-primary-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200"
+                className="bg-white text-primary-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-black hover:text-white transition-colors duration-200 text-black font-bold text-center "
               >
                 Créer un Compte
               </Link>
               <Link
                 to="/login"
-                className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-primary-600 transition-colors duration-200"
+                className="border-2 border-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-black hover:text-primary-600 transition-colors duration-200 text-center hover:text-white"
               >
                 Se Connecter
               </Link>
@@ -262,7 +262,7 @@ const Home = () => {
           ) : (
             <Link
               to="/dashboard"
-              className="bg-white text-primary-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 inline-block"
+              className=" border-2 border-black text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-black hover:text-white transition-colors duration-200 inline-block text-center "
             >
               Accéder au Tableau de Bord
             </Link>

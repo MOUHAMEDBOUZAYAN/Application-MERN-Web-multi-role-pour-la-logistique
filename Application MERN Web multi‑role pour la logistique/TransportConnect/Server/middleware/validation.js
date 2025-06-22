@@ -12,6 +12,9 @@ const handleValidationErrors = (req, res, next) => {
       value: error.value
     }));
     
+    // Log the detailed errors to the server console for debugging
+    console.error('Validation Errors:', JSON.stringify(formattedErrors, null, 2));
+    
     return res.status(400).json({
       success: false,
       message: 'Erreurs de validation',

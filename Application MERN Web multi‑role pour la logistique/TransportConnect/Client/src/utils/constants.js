@@ -70,6 +70,9 @@ export const MERCHANDISE_TYPES = {
   AUTRE: 'autre',
 };
 
+// Tableau des types de marchandises pour les formulaires
+export const CARGO_TYPES = Object.values(MERCHANDISE_TYPES);
+
 // Labels pour les types de marchandises
 export const MERCHANDISE_TYPE_LABELS = {
   [MERCHANDISE_TYPES.ELECTROMENAGER]: 'Électroménager',
@@ -291,9 +294,6 @@ export const SOCKET_EVENTS = {
   RECEIVE_MESSAGE: 'receive_message',
   NOTIFICATION: 'notification',
 };
-
-// Types de cargaison (alias pour MERCHANDISE_TYPES si besoin)
-export const CARGO_TYPES = MERCHANDISE_TYPES;
 
 export default {
   USER_ROLES,

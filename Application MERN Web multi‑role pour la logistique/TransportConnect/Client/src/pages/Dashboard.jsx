@@ -15,7 +15,8 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
-  Star
+  Star,
+  User
 } from 'lucide-react';
 import { formatDate, getStatusColor, getStatusLabel } from '../utils/helpers';
 import Loading, { CardLoading } from '../components/common/Loading';
@@ -54,24 +55,27 @@ const Dashboard = () => {
   const loadConductorData = async () => {
     const [announcementsRes, demandsRes] = await Promise.all([
       annonceAPI.getUserAnnouncements(),
-      demandeAPI.getAll({ conducteur: user._id, limit: 5 })
+      demandeAPI.getMineAsConducteur({ limit: 5 })
     ]);
 
-    setRecentAnnouncements(announcementsRes.data.slice(0, 5));
-    setRecentDemands(demandsRes.data.data || demandsRes.data);
+    const announcements = Array.isArray(announcementsRes) ? announcementsRes : [];
+    setRecentAnnouncements(announcements.slice(0, 5));
+
+    const demands = (demandsRes && Array.isArray(demandsRes.data)) ? demandsRes.data : [];
+    setRecentDemands(demands);
     
     setStats({
-      totalAnnouncements: announcementsRes.data.length,
-      activeAnnouncements: announcementsRes.data.filter(a => a.status === 'active').length,
-      totalDemands: demandsRes.data.total || demandsRes.data.length,
-      pendingDemands: (demandsRes.data.data || demandsRes.data).filter(d => d.status === 'pending').length
+      totalAnnouncements: announcements.length,
+      activeAnnouncements: announcements.filter(a => a.status === 'active').length,
+      totalDemands: demands.length,
+      pendingDemands: demands.filter(d => d.status === 'pending').length
     });
   };
 
   const loadSenderData = async () => {
     const [announcementsRes, demandsRes] = await Promise.all([
       annonceAPI.getAll({ limit: 5 }),
-      demandeAPI.getUserDemands()
+      demandeAPI.getMineAsExpediteur()
     ]);
 
     setRecentAnnouncements(announcementsRes.data.data || announcementsRes.data);
@@ -88,7 +92,7 @@ const Dashboard = () => {
   const loadAdminData = async () => {
     const [announcementsRes, demandsRes, usersRes] = await Promise.all([
       annonceAPI.getAll({ limit: 5 }),
-      demandeAPI.getAll({ limit: 5 }),
+      demandeAPI.getMineAsConducteur({ limit: 5 }),
       userAPI.getAll({ limit: 10 })
     ]);
 
@@ -266,7 +270,7 @@ const Dashboard = () => {
 
       {/* Quick Actions */}
       <div className="mt-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions Rapides</h2>
+        <h2 className=" text-xl font-semibold text-black font-bold  mb-4">Actions Rapides</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {renderQuickActions()}
         </div>
@@ -356,10 +360,10 @@ const Dashboard = () => {
     
     if (isConductor()) {
       actions.push(
-        <Link key="create" to="/my-announcements" className="card hover:shadow-lg transition-shadow cursor-pointer">
-          <div className="text-center">
-            <Truck className="h-8 w-8 text-primary-600 mx-auto mb-2" />
-            <h3 className="font-medium text-gray-900">Créer une Annonce</h3>
+        <Link key="create" to="/create-annonce" className="card hover:shadow-lg transition-shadow cursor-pointer">
+          <div className="text-center ">
+            <Truck className="h-8 w-8 text-primary-600 mx-auto mb-2 " />
+            <h3 className="font-medium text-gray-900 ">Créer une Annonce</h3>
             <p className="text-sm text-gray-600">Publier un nouveau trajet</p>
           </div>
         </Link>,
@@ -403,7 +407,7 @@ const Dashboard = () => {
     actions.push(
       <Link key="profile" to="/profile" className="card hover:shadow-lg transition-shadow cursor-pointer">
         <div className="text-center">
-          <Users className="h-8 w-8 text-green-600 mx-auto mb-2" />
+          <User className="h-8 w-8 text-green-600 mx-auto mb-2" />
           <h3 className="font-medium text-gray-900">Mon Profil</h3>
           <p className="text-sm text-gray-600">Modifier vos informations</p>
         </div>

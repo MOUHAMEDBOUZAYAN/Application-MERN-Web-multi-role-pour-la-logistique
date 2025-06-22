@@ -45,7 +45,7 @@ const Register = () => {
     if (/[a-z]/.test(password)) score += 1;
     if (/[A-Z]/.test(password)) score += 1;
     if (/[0-9]/.test(password)) score += 1;
-    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    if (/[@$!%*?&]/.test(password)) score += 1;
     
     if (score < 5) {
       return { type: 'error', message: 'Mot de passe faible', score };
@@ -86,7 +86,7 @@ const Register = () => {
     if (!isValidPhone(formData.telephone)) newErrors.telephone = 'Format de téléphone invalide (ex: +212 6XX XX XX XX)';
     if (!formData.password) newErrors.password = 'Le mot de passe est requis';
     if (getPasswordStrength(formData.password).score < 5) {
-      newErrors.password = 'Le mot de passe doit contenir au moins: 1 minuscule, 1 majuscule, 1 chiffre et 1 caractère spécial';
+      newErrors.password = 'Le mot de passe doit contenir: min 8 caractères, 1 minuscule, 1 majuscule, 1 chiffre et 1 caractère spécial (@$!%*?&)';
     }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';

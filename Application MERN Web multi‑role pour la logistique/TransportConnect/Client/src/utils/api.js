@@ -96,6 +96,7 @@ export const annonceAPI = {
   delete: (id) => api.delete(`/annonces/${id}`),
   search: (params) => api.get('/annonces/rechercher', { params }),
   getMine: (params) => api.get('/annonces/mes-annonces/liste', { params }),
+  getUserAnnouncements: (params) => api.get('/annonces/mes-annonces/liste', { params }),
   addComment: (id, comment) => api.post(`/annonces/${id}/commentaires`, { message: comment }),
   getStatistics: () => api.get('/annonces/statistiques'),
 };

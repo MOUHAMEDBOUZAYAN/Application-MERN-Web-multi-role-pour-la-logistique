@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { authAPI } from '../utils/api';
 import { STORAGE_KEYS } from '../utils/constants';
 import toast from 'react-hot-toast';
+import api from '../utils/api';
 
 // Initial state
 const initialState = {
@@ -98,27 +99,16 @@ export const AuthProvider = ({ children }) => {
         
         if (token && userData) {
           const user = JSON.parse(userData);
-          
-          // Verify token is still valid
-          try {
-            const response = await authAPI.getProfile();
-            dispatch({
-              type: ActionTypes.LOGIN_SUCCESS,
-              payload: {
-                user: response.data.user,
-                token
-              }
-            });
-          } catch (error) {
-            // Token is invalid, clear storage
-            localStorage.removeItem(STORAGE_KEYS.TOKEN);
-            localStorage.removeItem(STORAGE_KEYS.USER);
-            dispatch({ type: ActionTypes.SET_LOADING, payload: false });
-          }
-        } else {
-          dispatch({ type: ActionTypes.SET_LOADING, payload: false });
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          dispatch({
+            type: ActionTypes.LOGIN_SUCCESS,
+            payload: { user, token },
+          });
         }
       } catch (error) {
+        // Handle potential parsing errors
+        dispatch({ type: ActionTypes.LOGOUT });
+      } finally {
         dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       }
     };
@@ -137,6 +127,7 @@ export const AuthProvider = ({ children }) => {
       // Store in localStorage
       localStorage.setItem(STORAGE_KEYS.TOKEN, token);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       dispatch({
         type: ActionTypes.LOGIN_SUCCESS,
@@ -167,6 +158,7 @@ export const AuthProvider = ({ children }) => {
       // Store in localStorage
       localStorage.setItem(STORAGE_KEYS.TOKEN, token);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       dispatch({
         type: ActionTypes.LOGIN_SUCCESS,
@@ -196,6 +188,7 @@ export const AuthProvider = ({ children }) => {
       // Clear localStorage
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
+      delete api.defaults.headers.common['Authorization'];
       
       dispatch({ type: ActionTypes.LOGOUT });
       toast.success('Déconnexion réussie');
