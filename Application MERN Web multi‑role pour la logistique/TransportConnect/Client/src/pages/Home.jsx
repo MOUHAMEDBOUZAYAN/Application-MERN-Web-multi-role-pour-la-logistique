@@ -73,15 +73,15 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-600 to-primary-800 text-white">
+      <section className="bg-gradient-to-br from-primary-600 to-primary-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
                 Connectez-vous pour vos 
-                <span className="text-yellow-300"> transports</span>
+                <span className="text-yellow-400"> transports</span>
               </h1>
-              <p className="text-xl text-blue-100 leading-relaxed">
+              <p className="text-xl text-white leading-relaxed">
                 La plateforme qui met en relation conducteurs et expéditeurs pour un transport de marchandises efficace et sécurisé au Maroc.
               </p>
               
@@ -121,14 +121,14 @@ const Home = () => {
             </div>
             
             <div className="relative">
-              <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 space-y-6">
+              <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-2xl p-8 space-y-6">
                 <div className="flex items-center space-x-4">
                   <div className="bg-yellow-400 p-3 rounded-full">
                     <Truck className="h-8 w-8 text-primary-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold">Pour les Conducteurs</h3>
-                    <p className="text-blue-100">Monétisez vos trajets</p>
+                    <h3 className="text-xl font-semibold text-gray-900">Pour les Conducteurs</h3>
+                    <p className="text-gray-700">Monétisez vos trajets</p>
                   </div>
                 </div>
                 
@@ -137,8 +137,8 @@ const Home = () => {
                     <Package className="h-8 w-8 text-primary-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold">Pour les Expéditeurs</h3>
-                    <p className="text-blue-100">Envoyez vos colis facilement</p>
+                    <h3 className="text-xl font-semibold text-gray-900">Pour les Expéditeurs</h3>
+                    <p className="text-gray-700">Envoyez vos colis facilement</p>
                   </div>
                 </div>
               </div>

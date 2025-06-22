@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
-import { announcementsAPI, demandsAPI, usersAPI } from '../utils/api';
+import { annonceAPI, demandeAPI, userAPI } from '../utils/api';
 import { 
   Truck, 
   Package, 
@@ -53,8 +53,8 @@ const Dashboard = () => {
 
   const loadConductorData = async () => {
     const [announcementsRes, demandsRes] = await Promise.all([
-      announcementsAPI.getUserAnnouncements(),
-      demandsAPI.getAll({ conducteur: user._id, limit: 5 })
+      annonceAPI.getUserAnnouncements(),
+      demandeAPI.getAll({ conducteur: user._id, limit: 5 })
     ]);
 
     setRecentAnnouncements(announcementsRes.data.slice(0, 5));
@@ -70,8 +70,8 @@ const Dashboard = () => {
 
   const loadSenderData = async () => {
     const [announcementsRes, demandsRes] = await Promise.all([
-      announcementsAPI.getAll({ limit: 5 }),
-      demandsAPI.getUserDemands()
+      annonceAPI.getAll({ limit: 5 }),
+      demandeAPI.getUserDemands()
     ]);
 
     setRecentAnnouncements(announcementsRes.data.data || announcementsRes.data);
@@ -87,9 +87,9 @@ const Dashboard = () => {
 
   const loadAdminData = async () => {
     const [announcementsRes, demandsRes, usersRes] = await Promise.all([
-      announcementsAPI.getAll({ limit: 5 }),
-      demandsAPI.getAll({ limit: 5 }),
-      usersAPI.getAll({ limit: 10 })
+      annonceAPI.getAll({ limit: 5 }),
+      demandeAPI.getAll({ limit: 5 }),
+      userAPI.getAll({ limit: 10 })
     ]);
 
     setRecentAnnouncements(announcementsRes.data.data || announcementsRes.data);

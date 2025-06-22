@@ -1,283 +1,94 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { authAPI } from '../utils/api';
-import { STORAGE_KEYS } from '../utils/constants';
-import toast from 'react-hot-toast';
+// helpers.js
+// Place ici uniquement des fonctions utilitaires, pas de code React ni de context !
 
-// Initial state
-const initialState = {
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  isLoading: true,
-  error: null
-};
+export function formatDate(date) {
+  if (!date) return '';
+  return new Date(date).toLocaleDateString('fr-FR');
+}
 
-// Action types
-const ActionTypes = {
-  LOGIN_START: 'LOGIN_START',
-  LOGIN_SUCCESS: 'LOGIN_SUCCESS',
-  LOGIN_FAILURE: 'LOGIN_FAILURE',
-  LOGOUT: 'LOGOUT',
-  UPDATE_USER: 'UPDATE_USER',
-  SET_LOADING: 'SET_LOADING',
-  CLEAR_ERROR: 'CLEAR_ERROR'
-};
+export function formatTime(time) {
+  if (!time) return '';
+  return new Date(time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
 
-// Reducer
-const authReducer = (state, action) => {
-  switch (action.type) {
-    case ActionTypes.LOGIN_START:
-      return {
-        ...state,
-        isLoading: true,
-        error: null
-      };
-      
-    case ActionTypes.LOGIN_SUCCESS:
-      return {
-        ...state,
-        user: action.payload.user,
-        token: action.payload.token,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null
-      };
-      
-    case ActionTypes.LOGIN_FAILURE:
-      return {
-        ...state,
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: action.payload
-      };
-      
-    case ActionTypes.LOGOUT:
-      return {
-        ...initialState,
-        isLoading: false
-      };
-      
-    case ActionTypes.UPDATE_USER:
-      return {
-        ...state,
-        user: action.payload
-      };
-      
-    case ActionTypes.SET_LOADING:
-      return {
-        ...state,
-        isLoading: action.payload
-      };
-      
-    case ActionTypes.CLEAR_ERROR:
-      return {
-        ...state,
-        error: null
-      };
-      
+export function getInitials(name) {
+  if (!name) return '';
+  return name
+    .split(' ')
+    .map((n) => n[0]?.toUpperCase() || '')
+    .join('');
+}
+
+// Retourne la couleur associée à un statut (exemple générique, à adapter selon ton code)
+export function getStatusColor(status) {
+  switch (status) {
+    case 'active':
+    case 'accepted':
+    case 'success':
+      return 'green';
+    case 'pending':
+    case 'warning':
+      return 'orange';
+    case 'rejected':
+    case 'danger':
+      return 'red';
+    case 'inactive':
+    case 'gray':
+      return 'gray';
     default:
-      return state;
+      return 'blue';
   }
-};
+}
 
-// Create context
-const AuthContext = createContext();
-
-// Auth provider component
-export const AuthProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(authReducer, initialState);
-
-  // Initialize auth state from localStorage
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-        const userData = localStorage.getItem(STORAGE_KEYS.USER);
-        
-        if (token && userData) {
-          const user = JSON.parse(userData);
-          
-          // Verify token is still valid
-          try {
-            const response = await authAPI.getProfile();
-            dispatch({
-              type: ActionTypes.LOGIN_SUCCESS,
-              payload: {
-                user: response.data.user,
-                token
-              }
-            });
-          } catch (error) {
-            // Token is invalid, clear storage
-            localStorage.removeItem(STORAGE_KEYS.TOKEN);
-            localStorage.removeItem(STORAGE_KEYS.USER);
-            dispatch({ type: ActionTypes.SET_LOADING, payload: false });
-          }
-        } else {
-          dispatch({ type: ActionTypes.SET_LOADING, payload: false });
-        }
-      } catch (error) {
-        dispatch({ type: ActionTypes.SET_LOADING, payload: false });
-      }
-    };
-
-    initializeAuth();
-  }, []);
-
-  // Login function
-  const login = async (credentials) => {
-    try {
-      dispatch({ type: ActionTypes.LOGIN_START });
-      
-      const response = await authAPI.login(credentials);
-      const { user, token } = response.data;
-      
-      // Store in localStorage
-      localStorage.setItem(STORAGE_KEYS.TOKEN, token);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-      
-      dispatch({
-        type: ActionTypes.LOGIN_SUCCESS,
-        payload: { user, token }
-      });
-      
-      toast.success(`Bienvenue ${user.prenom} !`);
-      return { success: true };
-      
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Erreur de connexion';
-      dispatch({
-        type: ActionTypes.LOGIN_FAILURE,
-        payload: errorMessage
-      });
-      return { success: false, error: errorMessage };
-    }
-  };
-
-  // Register function
-  const register = async (userData) => {
-    try {
-      dispatch({ type: ActionTypes.LOGIN_START });
-      
-      const response = await authAPI.register(userData);
-      const { user, token } = response.data;
-      
-      // Store in localStorage
-      localStorage.setItem(STORAGE_KEYS.TOKEN, token);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-      
-      dispatch({
-        type: ActionTypes.LOGIN_SUCCESS,
-        payload: { user, token }
-      });
-      
-      toast.success('Compte créé avec succès !');
-      return { success: true };
-      
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Erreur lors de l\'inscription';
-      dispatch({
-        type: ActionTypes.LOGIN_FAILURE,
-        payload: errorMessage
-      });
-      return { success: false, error: errorMessage };
-    }
-  };
-
-  // Logout function
-  const logout = async () => {
-    try {
-      await authAPI.logout();
-    } catch (error) {
-      // Even if logout fails, clear local storage
-    } finally {
-      // Clear localStorage
-      localStorage.removeItem(STORAGE_KEYS.TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.USER);
-      
-      dispatch({ type: ActionTypes.LOGOUT });
-      toast.success('Déconnexion réussie');
-    }
-  };
-
-  // Update user function
-  const updateUser = async (userData) => {
-    try {
-      const response = await authAPI.updateProfile(userData);
-      const updatedUser = response.data.user;
-      
-      // Update localStorage
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
-      
-      dispatch({
-        type: ActionTypes.UPDATE_USER,
-        payload: updatedUser
-      });
-      
-      toast.success('Profil mis à jour avec succès');
-      return { success: true };
-      
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Erreur lors de la mise à jour';
-      toast.error(errorMessage);
-      return { success: false, error: errorMessage };
-    }
-  };
-
-  // Clear error function
-  const clearError = () => {
-    dispatch({ type: ActionTypes.CLEAR_ERROR });
-  };
-
-  // Check if user has specific role
-  const hasRole = (role) => {
-    return state.user?.role === role;
-  };
-
-  // Check if user is admin
-  const isAdmin = () => {
-    return hasRole('admin');
-  };
-
-  // Check if user is conductor
-  const isConductor = () => {
-    return hasRole('conducteur');
-  };
-
-  // Check if user is sender
-  const isSender = () => {
-    return hasRole('expediteur');
-  };
-
-  const value = {
-    ...state,
-    login,
-    register,
-    logout,
-    updateUser,
-    clearError,
-    hasRole,
-    isAdmin,
-    isConductor,
-    isSender
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-// Custom hook to use auth context
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+// Retourne un label lisible pour un statut (exemple générique, à adapter selon ton code)
+export function getStatusLabel(status) {
+  switch (status) {
+    case 'active':
+      return 'Actif';
+    case 'inactive':
+      return 'Inactif';
+    case 'pending':
+      return 'En attente';
+    case 'accepted':
+      return 'Accepté';
+    case 'rejected':
+      return 'Refusé';
+    case 'completed':
+      return 'Terminé';
+    default:
+      return status;
   }
-  return context;
-};
+}
 
-export default AuthContext;
+export function isValidEmail(email) {
+  if (!email) return false;
+  // Regex simple pour valider un email
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+export function isValidPhone(phone) {
+  if (!phone) return false;
+  // Regex pour valider un numéro marocain (+212 ou 0 suivi de 9 chiffres)
+  return /^(\+212|0)[5-7][0-9]{8}$/.test(phone);
+}
+
+export function formatPhoneNumber(phone) {
+  if (!phone) return '';
+  // Format marocain : +212 6 12 34 56 78 ou 06 12 34 56 78
+  return phone
+    .replace(/^(\+212|0)/, '+212 ')
+    .replace(/(\d{3})(\d{2})(\d{2})(\d{2})$/, '$1 $2 $3 $4');
+}
+
+// Retourne un message sur la robustesse du mot de passe
+export function getPasswordStrengthMessage(password) {
+  if (!password) return '';
+  if (password.length < 8) return 'Trop court';
+  if (!/[A-Z]/.test(password)) return 'Ajoutez une majuscule';
+  if (!/[a-z]/.test(password)) return 'Ajoutez une minuscule';
+  if (!/[0-9]/.test(password)) return 'Ajoutez un chiffre';
+  if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) return 'Ajoutez un caractère spécial';
+  return 'Mot de passe fort';
+}
+
+// Ajoute ici d'autres helpers si besoin

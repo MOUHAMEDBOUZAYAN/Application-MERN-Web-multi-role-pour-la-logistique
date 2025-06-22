@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { formatDate, formatTime, getInitials, getStatusColor, getStatusLabel } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
-import { demandsAPI } from '../../utils/api';
+import { demandeAPI } from '../../utils/api';
 import toast from 'react-hot-toast';
 import { ConfirmationModal } from '../common/Modal';
 
@@ -25,7 +25,7 @@ const AnnouncementCard = ({ announcement, onClick, showActions = false, variant 
   const handleSendDemand = async () => {
     try {
       setSending(true);
-      await demandsAPI.create({
+      await demandeAPI.create({
         annonce: announcement._id,
         expediteur: user._id,
         message: `Demande pour le transport de ${announcement.lieuDepart} vers ${announcement.destination}`

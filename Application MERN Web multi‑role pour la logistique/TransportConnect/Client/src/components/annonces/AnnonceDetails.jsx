@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { formatDate, formatTime, getInitials, formatPhoneNumber } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
-import { demandsAPI } from '../../utils/api';
+import { demandeAPI } from '../../utils/api';
 import { ConfirmationModal } from '../common/Modal';
 import toast from 'react-hot-toast';
 
@@ -30,7 +30,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
   const handleSendDemand = async () => {
     try {
       setSending(true);
-      await demandsAPI.create({
+      await demandeAPI.create({
         annonce: announcement._id,
         expediteur: user._id,
         message: demandMessage || `Demande pour le transport de ${announcement.lieuDepart} vers ${announcement.destination}`,

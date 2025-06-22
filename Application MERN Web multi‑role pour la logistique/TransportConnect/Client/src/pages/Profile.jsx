@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { 
   User, 
   Mail, 
@@ -13,9 +13,9 @@ import {
   Calendar,
   Edit3
 } from 'lucide-react';
-import { isValidEmail, isValidPhone, getInitials, formatDate } from '../../utils/helpers';
-import { InlineLoading } from '../common/Loading';
-import Modal, { ConfirmationModal } from '../common/Modal';
+import { isValidEmail, isValidPhone, getInitials, formatDate } from '../utils/helpers';
+import { InlineLoading } from '../components/common/Loading';
+import Modal, { ConfirmationModal } from '../components/common/Modal';
 
 const Profile = () => {
   const { user, updateUser, isLoading } = useAuth();

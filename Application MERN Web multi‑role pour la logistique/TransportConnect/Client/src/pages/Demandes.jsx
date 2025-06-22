@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { demandsAPI } from '../utils/api';
+import { demandeAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   MessageCircle, 
@@ -12,8 +12,8 @@ import {
 } from 'lucide-react';
 import { formatDate, getStatusColor, getStatusLabel } from '../utils/helpers';
 import Loading, { CardLoading } from '../components/common/Loading';
-import DemandCard from '../components/demands/DemandCard';
-import DemandDetails from '../components/demands/DemandDetails';
+import DemandCard from '../components/demandes/DemandeCard';
+import DemandDetails from '../components/demandes/DemandDetails';
 import Modal, { ConfirmationModal } from '../components/common/Modal';
 import toast from 'react-hot-toast';
 
@@ -38,10 +38,10 @@ const Demands = () => {
       
       if (isConductor()) {
         // Load demands received for conductor's announcements
-        response = await demandsAPI.getAll({ conducteur: user._id });
+        response = await demandeAPI.getAll({ conducteur: user._id });
       } else {
         // Load demands sent by the sender
-        response = await demandsAPI.getUserDemands();
+        response = await demandeAPI.getUserDemands();
       }
       
       setDemands(response.data.data || response.data);
@@ -55,7 +55,7 @@ const Demands = () => {
 
   const handleAcceptDemand = async (demandId) => {
     try {
-      await demandsAPI.accept(demandId);
+      await demandeAPI.accept(demandId);
       setDemands(prev => 
         prev.map(demand => 
           demand._id === demandId 
@@ -72,7 +72,7 @@ const Demands = () => {
 
   const handleRejectDemand = async (demandId) => {
     try {
-      await demandsAPI.reject(demandId);
+      await demandeAPI.reject(demandId);
       setDemands(prev => 
         prev.map(demand => 
           demand._id === demandId 
@@ -89,7 +89,7 @@ const Demands = () => {
 
   const handleCompleteDemand = async (demandId) => {
     try {
-      await demandsAPI.complete(demandId);
+      await demandeAPI.complete(demandId);
       setDemands(prev => 
         prev.map(demand => 
           demand._id === demandId 

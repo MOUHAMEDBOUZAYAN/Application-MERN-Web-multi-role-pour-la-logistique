@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { announcementsAPI } from '../utils/api';
+import { annonceAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Search, 
@@ -16,8 +16,8 @@ import {
 import { CITIES, CARGO_TYPES } from '../utils/constants';
 import { formatDate, formatTime } from '../utils/helpers';
 import Loading, { CardLoading } from '../components/common/Loading';
-import AnnouncementCard from '../components/announcements/AnnouncementCard';
-import AnnouncementDetails from '../components/announcements/AnnouncementDetails';
+import AnnonceCard from '../components/annonces/AnnonceCard';
+import AnnonceDetails from '../components/annonces/AnnonceDetails';
 import Modal from '../components/common/Modal';
 
 const Announcements = () => {
@@ -60,7 +60,7 @@ const Announcements = () => {
         }
       });
 
-      const response = await announcementsAPI.search(params);
+      const response = await annonceAPI.search(params);
       setAnnouncements(response.data.data || response.data);
     } catch (error) {
       console.error('Error loading announcements:', error);
@@ -372,7 +372,7 @@ const Announcements = () => {
             {/* Announcements Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {announcements.map((announcement) => (
-                <AnnouncementCard
+                <AnnonceCard
                   key={announcement._id}
                   announcement={announcement}
                   onClick={() => handleAnnouncementClick(announcement)}
@@ -392,7 +392,7 @@ const Announcements = () => {
         size="large"
       >
         {selectedAnnouncement && (
-          <AnnouncementDetails
+          <AnnonceDetails
             announcement={selectedAnnouncement}
             onClose={() => setSelectedAnnouncement(null)}
           />

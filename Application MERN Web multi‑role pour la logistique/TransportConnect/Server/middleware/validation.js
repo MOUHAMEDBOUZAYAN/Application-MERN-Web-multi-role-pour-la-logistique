@@ -28,15 +28,15 @@ const validateRegister = [
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('Le nom doit contenir entre 2 et 50 caractères')
-    .matches(/^[a-zA-ZàáâäçéèêëïîôùûüÿñæœÀÁÂÄÇÉÈÊËÏÎÔÙÛÜŸÑÆŒ\s-]+$/)
-    .withMessage('Le nom ne peut contenir que des lettres, espaces et tirets'),
+    .matches(/^[a-zA-ZàáâäçéèêëïîôùûüÿñæœÀÁÂÄÇÉÈÊËÏÎÔÙÛÜŸÑÆŒ\s-.]+$/)
+    .withMessage('Le nom ne peut contenir que des lettres, points, espaces et tirets'),
     
   body('prenom')
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('Le prénom doit contenir entre 2 et 50 caractères')
-    .matches(/^[a-zA-ZàáâäçéèêëïîôùûüÿñæœÀÁÂÄÇÉÈÊËÏÎÔÙÛÜŸÑÆŒ\s-]+$/)
-    .withMessage('Le prénom ne peut contenir que des lettres, espaces et tirets'),
+    .matches(/^[a-zA-ZàáâäçéèêëïîôùûüÿñæœÀÁÂÄÇÉÈÊËÏÎÔÙÛÜŸÑÆŒ\s-.]+$/)
+    .withMessage('Le prénom ne peut contenir que des lettres, points, espaces et tirets'),
     
   body('email')
     .trim()

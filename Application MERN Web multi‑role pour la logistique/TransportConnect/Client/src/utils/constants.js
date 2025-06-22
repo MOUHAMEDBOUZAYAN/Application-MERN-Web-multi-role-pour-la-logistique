@@ -193,6 +193,9 @@ export const MOROCCAN_CITIES = [
   'Khenifra',
 ];
 
+// Alias CITIES pour MOROCCAN_CITIES
+export const CITIES = MOROCCAN_CITIES;
+
 // Configuration de pagination
 export const PAGINATION = {
   DEFAULT_PAGE_SIZE: 12,
@@ -274,6 +277,24 @@ export const LOCALE_CONFIG = {
   LANGUAGE: 'fr-MA',
 };
 
+// Clés de stockage local utilisées dans l'app
+export const STORAGE_KEYS = {
+  TOKEN: 'token',
+  USER: 'user',
+};
+
+// Événements socket utilisés dans l'app
+export const SOCKET_EVENTS = {
+  JOIN_ROOM: 'join_room',
+  LEAVE_ROOM: 'leave_room',
+  SEND_MESSAGE: 'send_message',
+  RECEIVE_MESSAGE: 'receive_message',
+  NOTIFICATION: 'notification',
+};
+
+// Types de cargaison (alias pour MERCHANDISE_TYPES si besoin)
+export const CARGO_TYPES = MERCHANDISE_TYPES;
+
 export default {
   USER_ROLES,
   ANNONCE_STATUS,
@@ -291,6 +312,7 @@ export default {
   BADGE_TYPES,
   BADGE_CONFIG,
   MOROCCAN_CITIES,
+  CITIES,
   PAGINATION,
   MESSAGE_CONFIG,
   NOTIFICATION_TYPES,
@@ -299,4 +321,7 @@ export default {
   FORM_VALIDATION,
   ERROR_MESSAGES,
   LOCALE_CONFIG,
+  STORAGE_KEYS,
+  SOCKET_EVENTS,
+  CARGO_TYPES,
 };

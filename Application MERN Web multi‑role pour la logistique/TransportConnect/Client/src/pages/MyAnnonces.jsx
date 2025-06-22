@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { announcementsAPI } from '../utils/api';
+import { annonceAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Plus, 
@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 import { formatDate, getStatusColor, getStatusLabel } from '../utils/helpers';
 import Loading, { CardLoading } from '../components/common/Loading';
-import AnnouncementForm from '../components/announcements/AnnouncementForm';
-import AnnouncementDetails from '../components/announcements/AnnouncementDetails';
+import AnnonceForm from '../components/annonces/AnnonceForm';
+import AnnonceDetails from '../components/annonces/AnnonceDetails';
 import Modal, { ConfirmationModal } from '../components/common/Modal';
 import toast from 'react-hot-toast';
 
@@ -37,7 +37,7 @@ const MyAnnouncements = () => {
   const loadMyAnnouncements = async () => {
     try {
       setLoading(true);
-      const response = await announcementsAPI.getUserAnnouncements();
+      const response = await annonceAPI.getUserAnnouncements();
       setAnnouncements(response.data);
     } catch (error) {
       console.error('Error loading announcements:', error);
@@ -49,7 +49,7 @@ const MyAnnouncements = () => {
 
   const handleCreateAnnouncement = async (data) => {
     try {
-      const response = await announcementsAPI.create(data);
+      const response = await annonceAPI.create(data);
       setAnnouncements(prev => [response.data, ...prev]);
       setShowCreateForm(false);
       toast.success('Annonce créée avec succès !');
@@ -60,7 +60,7 @@ const MyAnnouncements = () => {
 
   const handleUpdateAnnouncement = async (data) => {
     try {
-      const response = await announcementsAPI.update(editingAnnouncement._id, data);
+      const response = await annonceAPI.update(editingAnnouncement._id, data);
       setAnnouncements(prev => 
         prev.map(ann => ann._id === editingAnnouncement._id ? response.data : ann)
       );
@@ -73,7 +73,7 @@ const MyAnnouncements = () => {
 
   const handleDeleteAnnouncement = async () => {
     try {
-      await announcementsAPI.delete(deleteConfirm._id);
+      await annonceAPI.delete(deleteConfirm._id);
       setAnnouncements(prev => prev.filter(ann => ann._id !== deleteConfirm._id));
       setDeleteConfirm(null);
       toast.success('Annonce supprimée avec succès !');
@@ -306,7 +306,7 @@ const MyAnnouncements = () => {
         title="Créer une nouvelle annonce"
         size="large"
       >
-        <AnnouncementForm
+        <AnnonceForm
           onSubmit={handleCreateAnnouncement}
           onCancel={() => setShowCreateForm(false)}
         />
@@ -320,7 +320,7 @@ const MyAnnouncements = () => {
         size="large"
       >
         {editingAnnouncement && (
-          <AnnouncementForm
+          <AnnonceForm
             announcement={editingAnnouncement}
             onSubmit={handleUpdateAnnouncement}
             onCancel={() => setEditingAnnouncement(null)}
@@ -336,7 +336,7 @@ const MyAnnouncements = () => {
         size="large"
       >
         {selectedAnnouncement && (
-          <AnnouncementDetails
+          <AnnonceDetails
             announcement={selectedAnnouncement}
             onClose={() => setSelectedAnnouncement(null)}
           />
