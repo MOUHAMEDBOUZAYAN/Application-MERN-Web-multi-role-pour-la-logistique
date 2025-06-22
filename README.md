@@ -504,7 +504,7 @@ flowchart TD
 
 ## 📸 Captures d'Écran
 
-*[Ici, vous pourriez ajouter des captures d'écran de votre application]*
+*[Ici, captures d'écran de mon application]*
 
 ## 🧪 Tests et Qualité
 
@@ -566,11 +566,11 @@ Ce projet **TransportConnect** a été conçu et développé dans le cadre d'un 
 
 ## 📞 Contact
 
-**Candidat** : [Votre Nom]  
+**Candidat** : Mouhamed Bouzayan
 **Formation** : École Numérique Ahmed Hensali  
 **Type d'évaluation** : Jury Blanc - Projet Full-Stack  
-**Email** : [votre.email@exemple.com]  
-**LinkedIn** : [Votre profil LinkedIn]  
+**Email** : mohammedbouzi177@gmail.com 
+**LinkedIn** : https://www.linkedin.com/in/mouhamed-bouzayan-9a7222344/ 
 
 ## 📄 Évaluation
 
