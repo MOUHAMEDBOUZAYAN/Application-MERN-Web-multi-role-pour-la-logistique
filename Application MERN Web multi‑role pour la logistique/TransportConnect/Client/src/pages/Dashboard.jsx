@@ -59,26 +59,30 @@ const Dashboard = () => {
         demandeAPI.getMineAsConducteur({ limit: 5 })
       ]);
 
-      // Safely handle announcements data
+      // Fixed: Safely handle announcements data - check for .annonces property first
       let announcements = [];
-      if (Array.isArray(announcementsRes)) {
+      if (Array.isArray(announcementsRes?.annonces)) {
+        announcements = announcementsRes.annonces;
+      } else if (Array.isArray(announcementsRes?.data?.annonces)) {
+        announcements = announcementsRes.data.annonces;
+      } else if (Array.isArray(announcementsRes)) {
         announcements = announcementsRes;
-      } else if (announcementsRes?.data && Array.isArray(announcementsRes.data)) {
+      } else if (Array.isArray(announcementsRes?.data)) {
         announcements = announcementsRes.data;
-      } else if (announcementsRes?.data?.data && Array.isArray(announcementsRes.data.data)) {
-        announcements = announcementsRes.data.data;
       }
 
       setRecentAnnouncements(announcements.slice(0, 5));
 
-      // Safely handle demands data
+      // Fixed: Safely handle demands data - check for .demandes property first
       let demands = [];
-      if (Array.isArray(demandsRes)) {
+      if (Array.isArray(demandsRes?.demandes)) {
+        demands = demandsRes.demandes;
+      } else if (Array.isArray(demandsRes?.data?.demandes)) {
+        demands = demandsRes.data.demandes;
+      } else if (Array.isArray(demandsRes)) {
         demands = demandsRes;
-      } else if (demandsRes?.data && Array.isArray(demandsRes.data)) {
+      } else if (Array.isArray(demandsRes?.data)) {
         demands = demandsRes.data;
-      } else if (demandsRes?.data?.data && Array.isArray(demandsRes.data.data)) {
-        demands = demandsRes.data.data;
       }
 
       setRecentDemands(demands.slice(0, 5));
@@ -109,26 +113,30 @@ const Dashboard = () => {
         demandeAPI.getMineAsExpediteur()
       ]);
 
-      // Safely handle announcements data
+      // Fixed: Safely handle announcements data - check for .annonces property first
       let announcements = [];
-      if (Array.isArray(announcementsRes)) {
+      if (Array.isArray(announcementsRes?.annonces)) {
+        announcements = announcementsRes.annonces;
+      } else if (Array.isArray(announcementsRes?.data?.annonces)) {
+        announcements = announcementsRes.data.annonces;
+      } else if (Array.isArray(announcementsRes)) {
         announcements = announcementsRes;
-      } else if (announcementsRes?.data && Array.isArray(announcementsRes.data)) {
+      } else if (Array.isArray(announcementsRes?.data)) {
         announcements = announcementsRes.data;
-      } else if (announcementsRes?.data?.data && Array.isArray(announcementsRes.data.data)) {
-        announcements = announcementsRes.data.data;
       }
 
       setRecentAnnouncements(announcements.slice(0, 5));
 
-      // Safely handle demands data
+      // Fixed: Safely handle demands data - check for .demandes property first
       let demands = [];
-      if (Array.isArray(demandsRes)) {
+      if (Array.isArray(demandsRes?.demandes)) {
+        demands = demandsRes.demandes;
+      } else if (Array.isArray(demandsRes?.data?.demandes)) {
+        demands = demandsRes.data.demandes;
+      } else if (Array.isArray(demandsRes)) {
         demands = demandsRes;
-      } else if (demandsRes?.data && Array.isArray(demandsRes.data)) {
+      } else if (Array.isArray(demandsRes?.data)) {
         demands = demandsRes.data;
-      } else if (demandsRes?.data?.data && Array.isArray(demandsRes.data.data)) {
-        demands = demandsRes.data.data;
       }
 
       setRecentDemands(demands.slice(0, 5));
@@ -160,26 +168,30 @@ const Dashboard = () => {
         userAPI.getAll({ limit: 10 })
       ]);
 
-      // Safely handle announcements data
+      // Fixed: Safely handle announcements data - check for .annonces property first
       let announcements = [];
-      if (Array.isArray(announcementsRes)) {
+      if (Array.isArray(announcementsRes?.annonces)) {
+        announcements = announcementsRes.annonces;
+      } else if (Array.isArray(announcementsRes?.data?.annonces)) {
+        announcements = announcementsRes.data.annonces;
+      } else if (Array.isArray(announcementsRes)) {
         announcements = announcementsRes;
-      } else if (announcementsRes?.data && Array.isArray(announcementsRes.data)) {
+      } else if (Array.isArray(announcementsRes?.data)) {
         announcements = announcementsRes.data;
-      } else if (announcementsRes?.data?.data && Array.isArray(announcementsRes.data.data)) {
-        announcements = announcementsRes.data.data;
       }
 
       setRecentAnnouncements(announcements.slice(0, 5));
 
-      // Safely handle demands data
+      // Fixed: Safely handle demands data - check for .demandes property first
       let demands = [];
-      if (Array.isArray(demandsRes)) {
+      if (Array.isArray(demandsRes?.demandes)) {
+        demands = demandsRes.demandes;
+      } else if (Array.isArray(demandsRes?.data?.demandes)) {
+        demands = demandsRes.data.demandes;
+      } else if (Array.isArray(demandsRes)) {
         demands = demandsRes;
-      } else if (demandsRes?.data && Array.isArray(demandsRes.data)) {
+      } else if (Array.isArray(demandsRes?.data)) {
         demands = demandsRes.data;
-      } else if (demandsRes?.data?.data && Array.isArray(demandsRes.data.data)) {
-        demands = demandsRes.data.data;
       }
 
       setRecentDemands(demands.slice(0, 5));

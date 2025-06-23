@@ -16,8 +16,8 @@ const AnnonceFormPage = () => {
       const fetchAnnonce = async () => {
         try {
           const response = await annonceAPI.getById(id);
-          // Le bon chemin pour la réponse de l'API
-          const annonceData = response.data?.annonce || response.data?.data?.annonce;
+          // Fixed: Since axios interceptor returns only the data, use response.annonce directly
+          const annonceData = response.annonce || response.data?.annonce;
           if (annonceData) {
             setAnnouncement(annonceData);
           }
@@ -42,13 +42,13 @@ const AnnonceFormPage = () => {
         response = await annonceAPI.create(formData);
       }
 
-      // Le bon chemin pour la réponse de l'API, avec une sécurité
-      const annonceResult = response.data?.annonce || response.data?.data?.annonce;
+      // Fixed: Use response.annonce directly since axios interceptor strips the outer data wrapper
+      const annonceResult = response.annonce;
 
       if (annonceResult && annonceResult._id) {
         navigate(`/annonces/${annonceResult._id}`);
       } else {
-        console.error("L'ID de l'annonce est introuvable dans la réponse. Redirection vers le tableau de bord.", response.data);
+        console.error("L'ID de l'annonce est introuvable dans la réponse. Redirection vers le tableau de bord.", response);
         navigate('/dashboard');
       }
     } catch (error) {
