@@ -38,10 +38,13 @@ const MyAnnouncements = () => {
     try {
       setLoading(true);
       const response = await annonceAPI.getUserAnnouncements();
-      setAnnouncements(response.data);
+      // Ensure we always set an array, even if the response is empty or malformed
+      setAnnouncements(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error loading announcements:', error);
       toast.error('Erreur lors du chargement des annonces');
+      // Set empty array on error to prevent crashes
+      setAnnouncements([]);
     } finally {
       setLoading(false);
     }
@@ -50,7 +53,7 @@ const MyAnnouncements = () => {
   const handleCreateAnnouncement = async (data) => {
     try {
       const response = await annonceAPI.create(data);
-      setAnnouncements(prev => [response.data, ...prev]);
+      setAnnouncements(prev => Array.isArray(prev) ? [response.data, ...prev] : [response.data]);
       setShowCreateForm(false);
       toast.success('Annonce créée avec succès !');
     } catch (error) {
@@ -62,7 +65,9 @@ const MyAnnouncements = () => {
     try {
       const response = await annonceAPI.update(editingAnnouncement._id, data);
       setAnnouncements(prev => 
-        prev.map(ann => ann._id === editingAnnouncement._id ? response.data : ann)
+        Array.isArray(prev) 
+          ? prev.map(ann => ann._id === editingAnnouncement._id ? response.data : ann)
+          : [response.data]
       );
       setEditingAnnouncement(null);
       toast.success('Annonce mise à jour avec succès !');
@@ -74,7 +79,11 @@ const MyAnnouncements = () => {
   const handleDeleteAnnouncement = async () => {
     try {
       await annonceAPI.delete(deleteConfirm._id);
-      setAnnouncements(prev => prev.filter(ann => ann._id !== deleteConfirm._id));
+      setAnnouncements(prev => 
+        Array.isArray(prev) 
+          ? prev.filter(ann => ann._id !== deleteConfirm._id)
+          : []
+      );
       setDeleteConfirm(null);
       toast.success('Annonce supprimée avec succès !');
     } catch (error) {
@@ -83,24 +92,30 @@ const MyAnnouncements = () => {
   };
 
   const getFilteredAnnouncements = () => {
+    // Ensure announcements is always an array
+    const safeAnnouncements = Array.isArray(announcements) ? announcements : [];
+    
     switch (activeTab) {
       case 'active':
-        return announcements.filter(ann => ann.status === 'active');
+        return safeAnnouncements.filter(ann => ann.status === 'active');
       case 'inactive':
-        return announcements.filter(ann => ann.status === 'inactive');
+        return safeAnnouncements.filter(ann => ann.status === 'inactive');
       case 'completed':
-        return announcements.filter(ann => ann.status === 'completed');
+        return safeAnnouncements.filter(ann => ann.status === 'completed');
       default:
-        return announcements;
+        return safeAnnouncements;
     }
   };
 
   const getTabCounts = () => {
+    // Ensure announcements is always an array
+    const safeAnnouncements = Array.isArray(announcements) ? announcements : [];
+    
     return {
-      all: announcements.length,
-      active: announcements.filter(ann => ann.status === 'active').length,
-      inactive: announcements.filter(ann => ann.status === 'inactive').length,
-      completed: announcements.filter(ann => ann.status === 'completed').length
+      all: safeAnnouncements.length,
+      active: safeAnnouncements.filter(ann => ann.status === 'active').length,
+      inactive: safeAnnouncements.filter(ann => ann.status === 'inactive').length,
+      completed: safeAnnouncements.filter(ann => ann.status === 'completed').length
     };
   };
 

@@ -38,6 +38,7 @@ const Announcements = () => {
     sortOrder: 'asc'
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadAnnouncements();
@@ -46,6 +47,8 @@ const Announcements = () => {
   const loadAnnouncements = async (searchFilters = {}) => {
     try {
       setSearchLoading(true);
+      setError(null);
+      
       const params = {
         ...filters,
         ...searchFilters,
@@ -61,9 +64,25 @@ const Announcements = () => {
       });
 
       const response = await annonceAPI.search(params);
-      setAnnouncements(response.data.data || response.data);
+      
+      // Handle different response structures
+      let announcementData = [];
+      if (response && response.data) {
+        if (Array.isArray(response.data)) {
+          announcementData = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          announcementData = response.data.data;
+        } else if (response.data.announcements && Array.isArray(response.data.announcements)) {
+          announcementData = response.data.announcements;
+        }
+      } else if (Array.isArray(response)) {
+        announcementData = response;
+      }
+      
+      setAnnouncements(announcementData);
     } catch (error) {
       console.error('Error loading announcements:', error);
+      setError('Erreur lors du chargement des annonces');
       setAnnouncements([]);
     } finally {
       setLoading(false);
@@ -113,6 +132,9 @@ const Announcements = () => {
     setSelectedAnnouncement(announcement);
   };
 
+  // Safe array check for announcements
+  const safeAnnouncements = Array.isArray(announcements) ? announcements : [];
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -133,9 +155,33 @@ const Announcements = () => {
           Rechercher un Transport
         </h1>
         <p className="text-gray-600">
-          Trouvez le trajet parfait pour vos envois parmi {announcements.length} annonces disponibles
+          Trouvez le trajet parfait pour vos envois parmi {safeAnnouncements.length} annonces disponibles
         </p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                Erreur
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+              <div className="mt-4">
+                <button
+                  onClick={() => loadAnnouncements()}
+                  className="text-sm bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200"
+                >
+                  Réessayer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-8">
@@ -151,22 +197,22 @@ const Announcements = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Rechercher par ville, type de marchandise..."
-                className="input-field pl-10"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
             </div>
             <button
               type="submit"
               disabled={searchLoading}
-              className="btn-primary"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
               {searchLoading ? <Loading size="small" /> : 'Rechercher'}
             </button>
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className="btn-secondary flex items-center space-x-2"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
               <span>Filtres</span>
             </button>
           </div>
@@ -184,10 +230,10 @@ const Announcements = () => {
                 <select
                   value={filters.lieuDepart}
                   onChange={(e) => handleFilterChange('lieuDepart', e.target.value)}
-                  className="input-field"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 >
                   <option value="">Toutes les villes</option>
-                  {CITIES.map(city => (
+                  {CITIES && CITIES.map(city => (
                     <option key={city} value={city}>{city}</option>
                   ))}
                 </select>
@@ -201,10 +247,10 @@ const Announcements = () => {
                 <select
                   value={filters.destination}
                   onChange={(e) => handleFilterChange('destination', e.target.value)}
-                  className="input-field"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 >
                   <option value="">Toutes les villes</option>
-                  {CITIES.map(city => (
+                  {CITIES && CITIES.map(city => (
                     <option key={city} value={city}>{city}</option>
                   ))}
                 </select>
@@ -220,7 +266,7 @@ const Announcements = () => {
                   value={filters.dateDepart}
                   onChange={(e) => handleFilterChange('dateDepart', e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
-                  className="input-field"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
               </div>
 
@@ -232,10 +278,10 @@ const Announcements = () => {
                 <select
                   value={filters.typeMarchandise}
                   onChange={(e) => handleFilterChange('typeMarchandise', e.target.value)}
-                  className="input-field"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 >
                   <option value="">Tous les types</option>
-                  {CARGO_TYPES.map(type => (
+                  {CARGO_TYPES && CARGO_TYPES.map(type => (
                     <option key={type} value={type}>{type}</option>
                   ))}
                 </select>
@@ -252,7 +298,7 @@ const Announcements = () => {
                   onChange={(e) => handleFilterChange('capaciteMin', e.target.value)}
                   placeholder="0"
                   min="0"
-                  className="input-field"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
               </div>
 
@@ -266,7 +312,7 @@ const Announcements = () => {
                   onChange={(e) => handleFilterChange('capaciteMax', e.target.value)}
                   placeholder="1000"
                   min="0"
-                  className="input-field"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
               </div>
 
@@ -278,7 +324,7 @@ const Announcements = () => {
                 <select
                   value={filters.sortBy}
                   onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                  className="input-field"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 >
                   <option value="dateDepart">Date de départ</option>
                   <option value="capaciteDisponible">Capacité</option>
@@ -293,7 +339,7 @@ const Announcements = () => {
                 <select
                   value={filters.sortOrder}
                   onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
-                  className="input-field"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 >
                   <option value="asc">Croissant</option>
                   <option value="desc">Décroissant</option>
@@ -304,13 +350,13 @@ const Announcements = () => {
             <div className="flex space-x-4">
               <button
                 onClick={applyFilters}
-                className="btn-primary"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Appliquer les filtres
               </button>
               <button
                 onClick={clearFilters}
-                className="btn-secondary"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Effacer tout
               </button>
@@ -323,7 +369,7 @@ const Announcements = () => {
       <div>
         {searchLoading ? (
           <CardLoading count={6} />
-        ) : announcements.length === 0 ? (
+        ) : safeAnnouncements.length === 0 ? (
           <div className="text-center py-12">
             <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -334,7 +380,7 @@ const Announcements = () => {
             </p>
             <button
               onClick={clearFilters}
-              className="btn-primary"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               Effacer les filtres
             </button>
@@ -344,7 +390,7 @@ const Announcements = () => {
             {/* Results Header */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900">
-                {announcements.length} annonce{announcements.length > 1 ? 's' : ''} trouvée{announcements.length > 1 ? 's' : ''}
+                {safeAnnouncements.length} annonce{safeAnnouncements.length > 1 ? 's' : ''} trouvée{safeAnnouncements.length > 1 ? 's' : ''}
               </h2>
               
               {/* Quick Sort */}
@@ -358,7 +404,7 @@ const Announcements = () => {
                     handleFilterChange('sortOrder', sortOrder);
                     loadAnnouncements();
                   }}
-                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="dateDepart-asc">Date (Plus tôt)</option>
                   <option value="dateDepart-desc">Date (Plus tard)</option>
@@ -371,12 +417,12 @@ const Announcements = () => {
 
             {/* Announcements Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {announcements.map((announcement) => (
+              {safeAnnouncements.map((announcement) => (
                 <AnnonceCard
-                  key={announcement._id}
+                  key={announcement._id || announcement.id || Math.random()}
                   announcement={announcement}
                   onClick={() => handleAnnouncementClick(announcement)}
-                  showActions={isSender()}
+                  showActions={isSender && isSender()}
                 />
               ))}
             </div>

@@ -53,58 +53,164 @@ const Dashboard = () => {
   };
 
   const loadConductorData = async () => {
-    const [announcementsRes, demandsRes] = await Promise.all([
-      annonceAPI.getUserAnnouncements(),
-      demandeAPI.getMineAsConducteur({ limit: 5 })
-    ]);
+    try {
+      const [announcementsRes, demandsRes] = await Promise.all([
+        annonceAPI.getUserAnnouncements(),
+        demandeAPI.getMineAsConducteur({ limit: 5 })
+      ]);
 
-    const announcements = Array.isArray(announcementsRes) ? announcementsRes : [];
-    setRecentAnnouncements(announcements.slice(0, 5));
+      // Safely handle announcements data
+      let announcements = [];
+      if (Array.isArray(announcementsRes)) {
+        announcements = announcementsRes;
+      } else if (announcementsRes?.data && Array.isArray(announcementsRes.data)) {
+        announcements = announcementsRes.data;
+      } else if (announcementsRes?.data?.data && Array.isArray(announcementsRes.data.data)) {
+        announcements = announcementsRes.data.data;
+      }
 
-    const demands = (demandsRes && Array.isArray(demandsRes.data)) ? demandsRes.data : [];
-    setRecentDemands(demands);
-    
-    setStats({
-      totalAnnouncements: announcements.length,
-      activeAnnouncements: announcements.filter(a => a.status === 'active').length,
-      totalDemands: demands.length,
-      pendingDemands: demands.filter(d => d.status === 'pending').length
-    });
+      setRecentAnnouncements(announcements.slice(0, 5));
+
+      // Safely handle demands data
+      let demands = [];
+      if (Array.isArray(demandsRes)) {
+        demands = demandsRes;
+      } else if (demandsRes?.data && Array.isArray(demandsRes.data)) {
+        demands = demandsRes.data;
+      } else if (demandsRes?.data?.data && Array.isArray(demandsRes.data.data)) {
+        demands = demandsRes.data.data;
+      }
+
+      setRecentDemands(demands.slice(0, 5));
+      
+      setStats({
+        totalAnnouncements: announcements.length,
+        activeAnnouncements: announcements.filter(a => a.status === 'active').length,
+        totalDemands: demands.length,
+        pendingDemands: demands.filter(d => d.status === 'pending').length
+      });
+    } catch (error) {
+      console.error('Error loading conductor data:', error);
+      setRecentAnnouncements([]);
+      setRecentDemands([]);
+      setStats({
+        totalAnnouncements: 0,
+        activeAnnouncements: 0,
+        totalDemands: 0,
+        pendingDemands: 0
+      });
+    }
   };
 
   const loadSenderData = async () => {
-    const [announcementsRes, demandsRes] = await Promise.all([
-      annonceAPI.getAll({ limit: 5 }),
-      demandeAPI.getMineAsExpediteur()
-    ]);
+    try {
+      const [announcementsRes, demandsRes] = await Promise.all([
+        annonceAPI.getAll({ limit: 5 }),
+        demandeAPI.getMineAsExpediteur()
+      ]);
 
-    setRecentAnnouncements(announcementsRes.data.data || announcementsRes.data);
-    setRecentDemands(demandsRes.data.slice(0, 5));
-    
-    setStats({
-      availableAnnouncements: (announcementsRes.data.data || announcementsRes.data).length,
-      totalDemands: demandsRes.data.length,
-      acceptedDemands: demandsRes.data.filter(d => d.status === 'accepted').length,
-      completedDemands: demandsRes.data.filter(d => d.status === 'completed').length
-    });
+      // Safely handle announcements data
+      let announcements = [];
+      if (Array.isArray(announcementsRes)) {
+        announcements = announcementsRes;
+      } else if (announcementsRes?.data && Array.isArray(announcementsRes.data)) {
+        announcements = announcementsRes.data;
+      } else if (announcementsRes?.data?.data && Array.isArray(announcementsRes.data.data)) {
+        announcements = announcementsRes.data.data;
+      }
+
+      setRecentAnnouncements(announcements.slice(0, 5));
+
+      // Safely handle demands data
+      let demands = [];
+      if (Array.isArray(demandsRes)) {
+        demands = demandsRes;
+      } else if (demandsRes?.data && Array.isArray(demandsRes.data)) {
+        demands = demandsRes.data;
+      } else if (demandsRes?.data?.data && Array.isArray(demandsRes.data.data)) {
+        demands = demandsRes.data.data;
+      }
+
+      setRecentDemands(demands.slice(0, 5));
+      
+      setStats({
+        availableAnnouncements: announcements.length,
+        totalDemands: demands.length,
+        acceptedDemands: demands.filter(d => d.status === 'accepted').length,
+        completedDemands: demands.filter(d => d.status === 'completed').length
+      });
+    } catch (error) {
+      console.error('Error loading sender data:', error);
+      setRecentAnnouncements([]);
+      setRecentDemands([]);
+      setStats({
+        availableAnnouncements: 0,
+        totalDemands: 0,
+        acceptedDemands: 0,
+        completedDemands: 0
+      });
+    }
   };
 
   const loadAdminData = async () => {
-    const [announcementsRes, demandsRes, usersRes] = await Promise.all([
-      annonceAPI.getAll({ limit: 5 }),
-      demandeAPI.getMineAsConducteur({ limit: 5 }),
-      userAPI.getAll({ limit: 10 })
-    ]);
+    try {
+      const [announcementsRes, demandsRes, usersRes] = await Promise.all([
+        annonceAPI.getAll({ limit: 5 }),
+        demandeAPI.getMineAsConducteur({ limit: 5 }),
+        userAPI.getAll({ limit: 10 })
+      ]);
 
-    setRecentAnnouncements(announcementsRes.data.data || announcementsRes.data);
-    setRecentDemands(demandsRes.data.data || demandsRes.data);
-    
-    setStats({
-      totalUsers: usersRes.data.total || usersRes.data.length,
-      totalAnnouncements: (announcementsRes.data.data || announcementsRes.data).length,
-      totalDemands: (demandsRes.data.data || demandsRes.data).length,
-      onlineUsers: onlineUsers.length
-    });
+      // Safely handle announcements data
+      let announcements = [];
+      if (Array.isArray(announcementsRes)) {
+        announcements = announcementsRes;
+      } else if (announcementsRes?.data && Array.isArray(announcementsRes.data)) {
+        announcements = announcementsRes.data;
+      } else if (announcementsRes?.data?.data && Array.isArray(announcementsRes.data.data)) {
+        announcements = announcementsRes.data.data;
+      }
+
+      setRecentAnnouncements(announcements.slice(0, 5));
+
+      // Safely handle demands data
+      let demands = [];
+      if (Array.isArray(demandsRes)) {
+        demands = demandsRes;
+      } else if (demandsRes?.data && Array.isArray(demandsRes.data)) {
+        demands = demandsRes.data;
+      } else if (demandsRes?.data?.data && Array.isArray(demandsRes.data.data)) {
+        demands = demandsRes.data.data;
+      }
+
+      setRecentDemands(demands.slice(0, 5));
+      
+      // Safely handle users data
+      let totalUsers = 0;
+      if (usersRes?.data?.total) {
+        totalUsers = usersRes.data.total;
+      } else if (Array.isArray(usersRes?.data)) {
+        totalUsers = usersRes.data.length;
+      } else if (Array.isArray(usersRes)) {
+        totalUsers = usersRes.length;
+      }
+      
+      setStats({
+        totalUsers: totalUsers,
+        totalAnnouncements: announcements.length,
+        totalDemands: demands.length,
+        onlineUsers: Array.isArray(onlineUsers) ? onlineUsers.length : 0
+      });
+    } catch (error) {
+      console.error('Error loading admin data:', error);
+      setRecentAnnouncements([]);
+      setRecentDemands([]);
+      setStats({
+        totalUsers: 0,
+        totalAnnouncements: 0,
+        totalDemands: 0,
+        onlineUsers: 0
+      });
+    }
   };
 
   if (loading) {
@@ -120,7 +226,7 @@ const Dashboard = () => {
       {/* Welcome Section */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Bienvenue, {user?.prenom} !
+          Bienvenue, {user?.prenom || 'Utilisateur'} !
         </h1>
         <p className="text-gray-600">
           Voici un aperçu de votre activité sur TransportConnect
@@ -137,7 +243,7 @@ const Dashboard = () => {
           <div className="flex items-center space-x-2">
             <Users className="h-4 w-4 text-gray-400" />
             <span className="text-sm text-gray-600">
-              {onlineUsers.length} utilisateurs en ligne
+              {Array.isArray(onlineUsers) ? onlineUsers.length : 0} utilisateurs en ligne
             </span>
           </div>
         </div>
@@ -157,20 +263,20 @@ const Dashboard = () => {
               {isConductor() ? 'Mes Annonces Récentes' : 'Annonces Disponibles'}
             </h2>
             <Link
-              to={isConductor() ? '/my-announcements' : '/announcements'}
+              to={isConductor() ? '/my-annonces' : '/annonces'}
               className="text-primary-600 hover:text-primary-500 text-sm font-medium"
             >
               Voir tout
             </Link>
           </div>
           
-          {recentAnnouncements.length === 0 ? (
+          {!Array.isArray(recentAnnouncements) || recentAnnouncements.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p>Aucune annonce trouvée</p>
               {isConductor() && (
                 <Link
-                  to="/my-announcements"
+                  to="/create-annonce"
                   className="mt-2 inline-block text-primary-600 hover:text-primary-500"
                 >
                   Créer une annonce
@@ -180,25 +286,25 @@ const Dashboard = () => {
           ) : (
             <div className="space-y-4">
               {recentAnnouncements.map((announcement) => (
-                <div key={announcement._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                <div key={announcement._id || Math.random()} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <MapPin className="h-4 w-4 text-gray-400" />
                         <span className="text-sm text-gray-600">
-                          {announcement.lieuDepart} → {announcement.destination}
+                          {announcement.lieuDepart || 'Départ'} → {announcement.destination || 'Destination'}
                         </span>
                       </div>
                       <p className="text-sm text-gray-900 mb-2">
-                        {announcement.typeMarchandise} - {announcement.capaciteDisponible}kg
+                        {announcement.typeMarchandise || 'Marchandise'} - {announcement.capaciteDisponible || 0}kg
                       </p>
                       <div className="flex items-center space-x-4 text-xs text-gray-500">
                         <span className="flex items-center space-x-1">
                           <Calendar className="h-3 w-3" />
-                          <span>{formatDate(announcement.dateDepart)}</span>
+                          <span>{formatDate(announcement.dateDepart || new Date())}</span>
                         </span>
-                        <span className={`badge badge-${getStatusColor(announcement.status)}`}>
-                          {getStatusLabel(announcement.status)}
+                        <span className={`badge badge-${getStatusColor(announcement.status || 'active')}`}>
+                          {getStatusLabel(announcement.status || 'active')}
                         </span>
                       </div>
                     </div>
@@ -216,14 +322,14 @@ const Dashboard = () => {
               {isConductor() ? 'Demandes Reçues' : 'Mes Demandes'}
             </h2>
             <Link
-              to="/demands"
+              to="/demandes"
               className="text-primary-600 hover:text-primary-500 text-sm font-medium"
             >
               Voir tout
             </Link>
           </div>
           
-          {recentDemands.length === 0 ? (
+          {!Array.isArray(recentDemands) || recentDemands.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p>Aucune demande trouvée</p>
@@ -231,22 +337,22 @@ const Dashboard = () => {
           ) : (
             <div className="space-y-4">
               {recentDemands.map((demand) => (
-                <div key={demand._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                <div key={demand._id || Math.random()} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <p className="text-sm text-gray-900 mb-2">
-                        {demand.typeColis} - {demand.poids}kg
+                        {demand.typeColis || 'Colis'} - {demand.poids || 0}kg
                       </p>
                       <p className="text-xs text-gray-600 mb-2">
-                        {demand.dimensions}
+                        {demand.dimensions || 'Dimensions non spécifiées'}
                       </p>
                       <div className="flex items-center space-x-4 text-xs text-gray-500">
                         <span className="flex items-center space-x-1">
                           <Clock className="h-3 w-3" />
-                          <span>{formatDate(demand.createdAt)}</span>
+                          <span>{formatDate(demand.createdAt || new Date())}</span>
                         </span>
-                        <span className={`badge badge-${getStatusColor(demand.status)}`}>
-                          {getStatusLabel(demand.status)}
+                        <span className={`badge badge-${getStatusColor(demand.status || 'pending')}`}>
+                          {getStatusLabel(demand.status || 'pending')}
                         </span>
                       </div>
                     </div>
@@ -270,7 +376,7 @@ const Dashboard = () => {
 
       {/* Quick Actions */}
       <div className="mt-8">
-        <h2 className=" text-xl font-semibold text-black font-bold  mb-4">Actions Rapides</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions Rapides</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {renderQuickActions()}
         </div>
@@ -361,13 +467,13 @@ const Dashboard = () => {
     if (isConductor()) {
       actions.push(
         <Link key="create" to="/create-annonce" className="card hover:shadow-lg transition-shadow cursor-pointer">
-          <div className="text-center ">
-            <Truck className="h-8 w-8 text-primary-600 mx-auto mb-2 " />
-            <h3 className="font-medium text-gray-900 ">Créer une Annonce</h3>
+          <div className="text-center">
+            <Truck className="h-8 w-8 text-primary-600 mx-auto mb-2" />
+            <h3 className="font-medium text-gray-900">Créer une Annonce</h3>
             <p className="text-sm text-gray-600">Publier un nouveau trajet</p>
           </div>
         </Link>,
-        <Link key="demands" to="/demands" className="card hover:shadow-lg transition-shadow cursor-pointer">
+        <Link key="demands" to="/demandes" className="card hover:shadow-lg transition-shadow cursor-pointer">
           <div className="text-center">
             <MessageCircle className="h-8 w-8 text-blue-600 mx-auto mb-2" />
             <h3 className="font-medium text-gray-900">Voir les Demandes</h3>
@@ -377,14 +483,14 @@ const Dashboard = () => {
       );
     } else if (isSender()) {
       actions.push(
-        <Link key="search" to="/announcements" className="card hover:shadow-lg transition-shadow cursor-pointer">
+        <Link key="search" to="/annonces" className="card hover:shadow-lg transition-shadow cursor-pointer">
           <div className="text-center">
             <Package className="h-8 w-8 text-primary-600 mx-auto mb-2" />
             <h3 className="font-medium text-gray-900">Chercher un Transport</h3>
             <p className="text-sm text-gray-600">Trouver un trajet disponible</p>
           </div>
         </Link>,
-        <Link key="mydemands" to="/demands" className="card hover:shadow-lg transition-shadow cursor-pointer">
+        <Link key="mydemands" to="/demandes" className="card hover:shadow-lg transition-shadow cursor-pointer">
           <div className="text-center">
             <MessageCircle className="h-8 w-8 text-blue-600 mx-auto mb-2" />
             <h3 className="font-medium text-gray-900">Mes Demandes</h3>

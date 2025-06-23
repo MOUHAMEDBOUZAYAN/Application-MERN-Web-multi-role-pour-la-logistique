@@ -40,9 +40,10 @@ const Header = () => {
 
   const navItems = [
     { path: '/', label: 'Accueil', icon: Home, public: true },
-    { path: '/announcements', label: 'Annonces', icon: Package, auth: true },
-    { path: '/my-announcements', label: 'Mes Annonces', icon: Truck, roles: ['conducteur'] },
-    { path: '/demands', label: 'Demandes', icon: MessageCircle, auth: true },
+    { path: '/annonces', label: 'Annonces', icon: Package, auth: true },
+    // LA CORRECTION EST ICI :
+    { path: '/my-annonces', label: 'Mes Annonces', icon: Truck, roles: ['conducteur'] },
+    { path: '/demandes', label: 'Demandes', icon: MessageCircle, auth: true },
     { path: '/admin', label: 'Administration', icon: BarChart3, roles: ['admin'] }
   ];
 
