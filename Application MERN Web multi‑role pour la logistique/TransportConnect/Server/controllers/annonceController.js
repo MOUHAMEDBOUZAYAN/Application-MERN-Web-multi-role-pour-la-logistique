@@ -32,10 +32,11 @@ const createAnnonce = async (req, res) => {
       $inc: { 'statistiques.nombreAnnonces': 1 }
     });
     
+    // ✅ Correction ici
     res.status(201).json({
       success: true,
-      message: 'Annonce créée avec succès',
-      data: { annonce }
+      message: "Annonce créée avec succès",
+      annonce: annonce
     });
     
   } catch (error) {

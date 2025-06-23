@@ -16,7 +16,7 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import AnnonceDetails from './components/annonces/AnnonceDetails';
 import DemandeDetails from './components/demandes/DemandDetails';
-import AnnonceForm from './components/annonces/AnnonceForm';
+import AnnonceFormPage from './pages/AnnonceFormPage';
 import { Toaster } from 'react-hot-toast';
 
 const ProtectedRoute = ({ children }) => {
@@ -74,8 +74,8 @@ function App() {
                   <Route path="/demandes" element={<ProtectedRoute><Demandes /></ProtectedRoute>} />
                   <Route path="/demandes/:id" element={<ProtectedRoute><DemandeDetails /></ProtectedRoute>} />
                   <Route path="/my-annonces" element={<ProtectedRoute><MyAnnonces /></ProtectedRoute>} />
-                  <Route path="/create-annonce" element={<ProtectedRoute><AnnonceForm /></ProtectedRoute>} />
-                  <Route path="/edit-annonce/:id" element={<ProtectedRoute><AnnonceForm /></ProtectedRoute>} />
+                  <Route path="/create-annonce" element={<ProtectedRoute><AnnonceFormPage /></ProtectedRoute>} />
+                  <Route path="/edit-annonce/:id" element={<ProtectedRoute><AnnonceFormPage /></ProtectedRoute>} />
 
                   {/* Routes Admin */}
                   <Route path="/admin/*" element={<AdminRoute><Admin /></AdminRoute>} />

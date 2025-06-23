@@ -129,19 +129,19 @@ const Footer = () => {
               <div className="flex items-center space-x-3">
                 <MapPin className="h-5 w-5 text-primary-400 flex-shrink-0" />
                 <span className="text-gray-300 text-sm">
-                  Casablanca, Maroc
+                  Beni mellal, Maroc
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="h-5 w-5 text-primary-400 flex-shrink-0" />
                 <span className="text-gray-300 text-sm">
-                  +212 6XX XX XX XX
+                  +212 690815605
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-primary-400 flex-shrink-0" />
                 <span className="text-gray-300 text-sm">
-                  contact@transportconnect.ma
+                  mohammedbouzi177@gmail.com
                 </span>
               </div>
             </div>

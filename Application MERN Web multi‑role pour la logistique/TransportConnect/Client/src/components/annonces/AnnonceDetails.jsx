@@ -27,6 +27,33 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
   const [demandMessage, setDemandMessage] = useState('');
   const [sending, setSending] = useState(false);
 
+  // ✅ AJOUT DE LA VÉRIFICATION DE SÉCURITÉ
+  if (!announcement) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Chargement de l'annonce...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ VÉRIFICATION SUPPLÉMENTAIRE POUR LE CONDUCTEUR
+  if (!announcement.conducteur) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <p className="text-red-600">Erreur : Informations du conducteur manquantes</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleSendDemand = async () => {
     try {
       setSending(true);
