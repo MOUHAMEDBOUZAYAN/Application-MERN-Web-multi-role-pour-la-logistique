@@ -90,13 +90,13 @@ const Home = () => {
                   <>
                     <Link
                       to="/register"
-                      className="bg-white text-primary-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 text-center"
+                      className="bg-white border-black border-2 text-primary-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-black hover:text-white transition-colors duration-200 text-center"
                     >
                       Commencer Maintenant
                     </Link>
                     <Link
                       to="/announcements"
-                      className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-primary-600 transition-colors duration-200 text-center"
+                      className="border-2 border-black text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-black hover:text-white transition-colors duration-200 text-center"
                     >
                       Voir les Annonces
                     </Link>

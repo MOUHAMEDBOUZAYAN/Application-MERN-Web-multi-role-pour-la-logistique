@@ -28,14 +28,13 @@ const Announcements = () => {
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
-    lieuDepart: '',
-    destination: '',
-    dateDepart: '',
-    typeMarchandise: '',
-    capaciteMin: '',
-    capaciteMax: '',
-    sortBy: 'dateDepart',
-    sortOrder: 'asc'
+    villeDepart: '',
+    villeDestination: '',
+    dateMin: '',
+    typesMarchandise: '',
+    prixMin: '',
+    prixMax: '',
+    sort: '-createdAt'
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState(null);
@@ -52,7 +51,7 @@ const Announcements = () => {
       const params = {
         ...filters,
         ...searchFilters,
-        status: 'active',
+        statut: 'active',
         limit: 20
       };
       
@@ -63,22 +62,28 @@ const Announcements = () => {
         }
       });
 
-      const response = await annonceAPI.search(params);
+      console.log('Loading announcements with params:', params);
+
+      // Use getAnnonces instead of search
+      const response = await annonceAPI.getAll(params);
       
-      // Handle different response structures
+      console.log('API Response:', response);
+
+      // Handle the response structure based on your backend
       let announcementData = [];
-      if (response && response.data) {
-        if (Array.isArray(response.data)) {
+      if (response && response.success && response.data) {
+        if (Array.isArray(response.data.annonces)) {
+          announcementData = response.data.annonces;
+        } else if (Array.isArray(response.data)) {
           announcementData = response.data;
-        } else if (response.data.data && Array.isArray(response.data.data)) {
-          announcementData = response.data.data;
-        } else if (response.data.announcements && Array.isArray(response.data.announcements)) {
-          announcementData = response.data.announcements;
         }
+      } else if (response && Array.isArray(response.annonces)) {
+        announcementData = response.annonces;
       } else if (Array.isArray(response)) {
         announcementData = response;
       }
       
+      console.log('Processed announcements:', announcementData);
       setAnnouncements(announcementData);
     } catch (error) {
       console.error('Error loading announcements:', error);
@@ -95,6 +100,7 @@ const Announcements = () => {
     const searchFilters = {};
     
     if (searchQuery.trim()) {
+      // Add search to different fields based on your backend API
       searchFilters.search = searchQuery.trim();
     }
     
@@ -115,14 +121,13 @@ const Announcements = () => {
 
   const clearFilters = () => {
     setFilters({
-      lieuDepart: '',
-      destination: '',
-      dateDepart: '',
-      typeMarchandise: '',
-      capaciteMin: '',
-      capaciteMax: '',
-      sortBy: 'dateDepart',
-      sortOrder: 'asc'
+      villeDepart: '',
+      villeDestination: '',
+      dateMin: '',
+      typesMarchandise: '',
+      prixMin: '',
+      prixMax: '',
+      sort: '-createdAt'
     });
     setSearchQuery('');
     loadAnnouncements({});
@@ -134,6 +139,16 @@ const Announcements = () => {
 
   // Safe array check for announcements
   const safeAnnouncements = Array.isArray(announcements) ? announcements : [];
+
+  // Mapping function to flatten annonce data for the card
+  const mapAnnonce = (annonce) => ({
+    ...annonce,
+    lieuDepart: annonce.lieuDepart || annonce.trajet?.depart?.ville || '',
+    destination: annonce.destination || annonce.trajet?.destination?.ville || '',
+    dateDepart: annonce.dateDepart || annonce.planning?.dateDepart || '',
+    typeMarchandise: annonce.typeMarchandise || (Array.isArray(annonce.typesMarchandise) ? annonce.typesMarchandise[0] : ''),
+    capaciteDisponible: annonce.capaciteDisponible || annonce.capacite?.poidsMax || '',
+  });
 
   if (loading) {
     return (
@@ -228,8 +243,8 @@ const Announcements = () => {
                   Ville de départ
                 </label>
                 <select
-                  value={filters.lieuDepart}
-                  onChange={(e) => handleFilterChange('lieuDepart', e.target.value)}
+                  value={filters.villeDepart}
+                  onChange={(e) => handleFilterChange('villeDepart', e.target.value)}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 >
                   <option value="">Toutes les villes</option>
@@ -245,8 +260,8 @@ const Announcements = () => {
                   Destination
                 </label>
                 <select
-                  value={filters.destination}
-                  onChange={(e) => handleFilterChange('destination', e.target.value)}
+                  value={filters.villeDestination}
+                  onChange={(e) => handleFilterChange('villeDestination', e.target.value)}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 >
                   <option value="">Toutes les villes</option>
@@ -263,8 +278,8 @@ const Announcements = () => {
                 </label>
                 <input
                   type="date"
-                  value={filters.dateDepart}
-                  onChange={(e) => handleFilterChange('dateDepart', e.target.value)}
+                  value={filters.dateMin}
+                  onChange={(e) => handleFilterChange('dateMin', e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
@@ -276,26 +291,33 @@ const Announcements = () => {
                   Type de marchandise
                 </label>
                 <select
-                  value={filters.typeMarchandise}
-                  onChange={(e) => handleFilterChange('typeMarchandise', e.target.value)}
+                  value={filters.typesMarchandise}
+                  onChange={(e) => handleFilterChange('typesMarchandise', e.target.value)}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 >
                   <option value="">Tous les types</option>
-                  {CARGO_TYPES && CARGO_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
+                  <option value="electromenager">Électroménager</option>
+                  <option value="mobilier">Mobilier</option>
+                  <option value="vetements">Vêtements</option>
+                  <option value="alimentation">Alimentation</option>
+                  <option value="electronique">Électronique</option>
+                  <option value="documents">Documents</option>
+                  <option value="medicaments">Médicaments</option>
+                  <option value="fragile">Fragile</option>
+                  <option value="materiaux_construction">Matériaux de construction</option>
+                  <option value="autre">Autre</option>
                 </select>
               </div>
 
-              {/* Capacity Range */}
+              {/* Price Range */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Capacité min (kg)
+                  Prix min (MAD)
                 </label>
                 <input
                   type="number"
-                  value={filters.capaciteMin}
-                  onChange={(e) => handleFilterChange('capaciteMin', e.target.value)}
+                  value={filters.prixMin}
+                  onChange={(e) => handleFilterChange('prixMin', e.target.value)}
                   placeholder="0"
                   min="0"
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -304,12 +326,12 @@ const Announcements = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Capacité max (kg)
+                  Prix max (MAD)
                 </label>
                 <input
                   type="number"
-                  value={filters.capaciteMax}
-                  onChange={(e) => handleFilterChange('capaciteMax', e.target.value)}
+                  value={filters.prixMax}
+                  onChange={(e) => handleFilterChange('prixMax', e.target.value)}
                   placeholder="1000"
                   min="0"
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -322,27 +344,16 @@ const Announcements = () => {
                   Trier par
                 </label>
                 <select
-                  value={filters.sortBy}
-                  onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+                  value={filters.sort}
+                  onChange={(e) => handleFilterChange('sort', e.target.value)}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 >
-                  <option value="dateDepart">Date de départ</option>
-                  <option value="capaciteDisponible">Capacité</option>
-                  <option value="createdAt">Plus récent</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ordre
-                </label>
-                <select
-                  value={filters.sortOrder}
-                  onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                >
-                  <option value="asc">Croissant</option>
-                  <option value="desc">Décroissant</option>
+                  <option value="planning.dateDepart">Date de départ (croissant)</option>
+                  <option value="-planning.dateDepart">Date de départ (décroissant)</option>
+                  <option value="capacite.poidsMax">Capacité (croissant)</option>
+                  <option value="-capacite.poidsMax">Capacité (décroissant)</option>
+                  <option value="-createdAt">Plus récent</option>
+                  <option value="createdAt">Plus ancien</option>
                 </select>
               </div>
             </div>
@@ -397,20 +408,18 @@ const Announcements = () => {
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-600">Trier:</span>
                 <select
-                  value={`${filters.sortBy}-${filters.sortOrder}`}
+                  value={filters.sort}
                   onChange={(e) => {
-                    const [sortBy, sortOrder] = e.target.value.split('-');
-                    handleFilterChange('sortBy', sortBy);
-                    handleFilterChange('sortOrder', sortOrder);
+                    handleFilterChange('sort', e.target.value);
                     loadAnnouncements();
                   }}
                   className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="dateDepart-asc">Date (Plus tôt)</option>
-                  <option value="dateDepart-desc">Date (Plus tard)</option>
-                  <option value="capaciteDisponible-desc">Capacité (Plus élevée)</option>
-                  <option value="capaciteDisponible-asc">Capacité (Plus faible)</option>
-                  <option value="createdAt-desc">Plus récent</option>
+                  <option value="planning.dateDepart">Date (Plus tôt)</option>
+                  <option value="-planning.dateDepart">Date (Plus tard)</option>
+                  <option value="-capacite.poidsMax">Capacité (Plus élevée)</option>
+                  <option value="capacite.poidsMax">Capacité (Plus faible)</option>
+                  <option value="-createdAt">Plus récent</option>
                 </select>
               </div>
             </div>
@@ -420,7 +429,7 @@ const Announcements = () => {
               {safeAnnouncements.map((announcement) => (
                 <AnnonceCard
                   key={announcement._id || announcement.id || Math.random()}
-                  announcement={announcement}
+                  announcement={mapAnnonce(announcement)}
                   onClick={() => handleAnnouncementClick(announcement)}
                   showActions={isSender && isSender()}
                 />

@@ -161,7 +161,9 @@ const Register = () => {
           </p>
           <div className="mt-4 text-center">
             <span className="text-sm text-gray-500">Déjà un compte ? </span>
-            <button className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+            <button 
+            onClick={() => navigate("/login")}
+            className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
               Connectez-vous
             </button>
           </div>
