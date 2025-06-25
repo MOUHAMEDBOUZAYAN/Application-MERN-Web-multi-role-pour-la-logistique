@@ -213,7 +213,7 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {howItWorks.map((step, index) => (
               <div key={index} className="text-center relative">
-                <div className="bg-primary-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
+                <div className="bg-primary-600 text-black w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
                   {step.step}
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">
