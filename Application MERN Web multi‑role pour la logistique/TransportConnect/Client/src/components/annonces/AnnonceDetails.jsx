@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MapPin, 
   Calendar, 
@@ -30,18 +30,40 @@ import {
 } from 'lucide-react';
 import { formatDate, formatTime, getInitials, formatPhoneNumber } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
-import { demandeAPI } from '../../utils/api';
+import { demandeAPI, annonceAPI } from '../../utils/api';
 import { ConfirmationModal } from '../common/Modal';
 import toast from 'react-hot-toast';
 
-const AnnouncementDetails = ({ announcement, onClose }) => {
+const AnnonceDetails = ({ annonceId, onClose }) => {
   const { user, isSender } = useAuth();
+  const [announcement, setAnnouncement] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showDemandModal, setShowDemandModal] = useState(false);
   const [demandMessage, setDemandMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
-  if (!announcement) {
+  useEffect(() => {
+    if (annonceId) {
+      const fetchAnnonce = async () => {
+        try {
+          setLoading(true);
+          const response = await annonceAPI.getById(annonceId);
+          // Robust parsing for all possible backend responses
+          const ann = response.data.annonce || response.data.data?.annonce || response.data;
+          setAnnouncement(ann);
+        } catch (error) {
+          console.error("Erreur lors de la récupération de l'annonce:", error);
+          toast.error("Impossible de charger les détails de l'annonce.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchAnnonce();
+    }
+  }, [annonceId]);
+
+  if (loading) {
     return (
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-center py-16">
@@ -50,6 +72,21 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
             </div>
             <p className="text-gray-600 text-lg">Chargement de l'annonce...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!announcement) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center">
+            <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <p className="text-red-600 text-lg font-medium">
+              Impossible de charger les détails de l'annonce.
+            </p>
           </div>
         </div>
       </div>
@@ -75,7 +112,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
       await demandeAPI.create({
         annonce: announcement._id,
         expediteur: user._id,
-        message: demandMessage || `Demande pour le transport de ${announcement.lieuDepart} vers ${announcement.destination}`,
+        message: demandMessage || `Demande pour le transport de ${announcement.trajet.depart.ville} vers ${announcement.trajet.destination.ville}`,
         typeColis: 'Colis standard',
         poids: 5,
         dimensions: '30x30x30 cm'
@@ -83,7 +120,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
       
       toast.success('Demande envoyée avec succès !');
       setShowDemandModal(false);
-      onClose();
+      onClose(annonceId);
     } catch (error) {
       toast.error('Erreur lors de l\'envoi de la demande');
     } finally {
@@ -103,7 +140,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
   ];
 
   const getUrgencyLevel = () => {
-    const hoursUntilDeparture = Math.floor((new Date(announcement.dateDepart) - new Date()) / (1000 * 60 * 60));
+    const hoursUntilDeparture = Math.floor((new Date(announcement.planning.dateDepart) - new Date()) / (1000 * 60 * 60));
     if (hoursUntilDeparture <= 24) return { level: 'urgent', color: 'red', label: 'Urgent' };
     if (hoursUntilDeparture <= 72) return { level: 'soon', color: 'orange', label: 'Bientôt' };
     return { level: 'normal', color: 'green', label: 'Planifié' };
@@ -150,7 +187,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
               <div className="flex items-center space-x-4 mb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-emerald-400 rounded-full shadow-lg"></div>
-                  <span className="text-2xl font-bold text-white">{announcement.lieuDepart}</span>
+                  <span className="text-2xl font-bold text-white">{announcement.trajet.depart.ville}</span>
                 </div>
                 
                 <div className="flex-1 relative min-w-[100px]">
@@ -163,7 +200,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                 </div>
                 
                 <div className="flex items-center space-x-3">
-                  <span className="text-2xl font-bold text-white">{announcement.destination}</span>
+                  <span className="text-2xl font-bold text-white">{announcement.trajet.destination.ville}</span>
                   <div className="w-4 h-4 bg-red-400 rounded-full shadow-lg"></div>
                 </div>
               </div>
@@ -171,12 +208,12 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
               <div className="flex items-center space-x-6 text-blue-100">
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-5 w-5" />
-                  <span className="font-medium">{formatDate(announcement.dateDepart)}</span>
+                  <span className="font-medium">{formatDate(announcement.planning.dateDepart)}</span>
                 </div>
-                {announcement.heureDepart && (
+                {announcement.planning.dateDepart && (
                   <div className="flex items-center space-x-2">
                     <Clock className="h-5 w-5" />
-                    <span className="font-medium">{formatTime(announcement.heureDepart)}</span>
+                    <span className="font-medium">{formatTime(announcement.planning.dateDepart)}</span>
                   </div>
                 )}
               </div>
@@ -235,7 +272,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                   </div>
                   <h3 className="font-semibold text-blue-900">Type de marchandise</h3>
                 </div>
-                <p className="text-2xl font-bold text-blue-900">{announcement.typeMarchandise}</p>
+                <p className="text-2xl font-bold text-blue-900">{announcement.typesMarchandise.join(', ')}</p>
               </div>
 
               <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-6 border border-emerald-200">
@@ -246,7 +283,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                   <h3 className="font-semibold text-emerald-900">Capacité disponible</h3>
                 </div>
                 <p className="text-2xl font-bold text-emerald-900">
-                  {announcement.capaciteDisponible} <span className="text-lg">kg</span>
+                  {announcement.capacite.poidsMax} <span className="text-lg">kg</span>
                 </p>
               </div>
 
@@ -258,7 +295,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                   <h3 className="font-semibold text-purple-900">Distance</h3>
                 </div>
                 <p className="text-2xl font-bold text-purple-900">
-                  {announcement.distance || 'N/A'} <span className="text-lg">km</span>
+                  {announcement.trajet.distance || 'N/A'} <span className="text-lg">km</span>
                 </p>
               </div>
 
@@ -270,7 +307,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                   <h3 className="font-semibold text-orange-900">Durée estimée</h3>
                 </div>
                 <p className="text-2xl font-bold text-orange-900">
-                  {announcement.dureeEstimee || 'N/A'} <span className="text-lg">heures</span>
+                  {announcement.trajet.dureeEstimee || 'N/A'} <span className="text-lg">heures</span>
                 </p>
               </div>
             </div>
@@ -289,22 +326,22 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Vues</span>
-                    <span className="font-medium">{announcement.vuesCount || 0}</span>
+                    <span className="font-medium">{announcement.statistiques.nombreVues || 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Demandes</span>
-                    <span className="font-medium">{announcement.demandesCount || 0}</span>
+                    <span className="font-medium">{announcement.statistiques.nombreDemandes || 0}</span>
                   </div>
                 </div>
               </div>
 
-              {announcement.prix && (
+              {announcement.tarification.prixFixe && (
                 <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl shadow-lg border border-yellow-200 p-6">
                   <h3 className="font-semibold text-yellow-900 mb-3 flex items-center space-x-2">
                     <CreditCard className="h-5 w-5" />
                     <span>Prix indicatif</span>
                   </h3>
-                  <p className="text-3xl font-bold text-yellow-900">{announcement.prix} MAD</p>
+                  <p className="text-3xl font-bold text-yellow-900">{announcement.tarification.prixFixe} MAD</p>
                 </div>
               )}
             </div>
@@ -327,7 +364,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                     <CheckCircle className="h-4 w-4 text-white" />
                   </div>
                   <div className="w-1 h-24 bg-gradient-to-b from-emerald-500 to-blue-500"></div>
-                  {announcement.etapesIntermediaires?.map((_, index) => (
+                  {announcement.trajet.etapesIntermediaires?.map((_, index) => (
                     <React.Fragment key={index}>
                       <div className="w-4 h-4 bg-blue-400 rounded-full shadow-md"></div>
                       <div className="w-1 h-16 bg-gradient-to-b from-blue-400 to-blue-500"></div>
@@ -343,17 +380,17 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                   <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-2xl p-6 border border-emerald-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-xl font-bold text-emerald-900 mb-2">{announcement.lieuDepart}</h4>
+                        <h4 className="text-xl font-bold text-emerald-900 mb-2">{announcement.trajet.depart.ville}</h4>
                         <p className="text-emerald-700 font-medium">Point de départ</p>
                         <div className="flex items-center space-x-4 mt-3 text-sm text-emerald-600">
                           <div className="flex items-center space-x-1">
                             <Calendar className="h-4 w-4" />
-                            <span>{formatDate(announcement.dateDepart)}</span>
+                            <span>{formatDate(announcement.planning.dateDepart)}</span>
                           </div>
-                          {announcement.heureDepart && (
+                          {announcement.planning.dateDepart && (
                             <div className="flex items-center space-x-1">
                               <Clock className="h-4 w-4" />
-                              <span>{formatTime(announcement.heureDepart)}</span>
+                              <span>{formatTime(announcement.planning.dateDepart)}</span>
                             </div>
                           )}
                         </div>
@@ -365,11 +402,11 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                   </div>
 
                   {/* Intermediate Steps */}
-                  {announcement.etapesIntermediaires?.map((etape, index) => (
+                  {announcement.trajet.etapesIntermediaires?.map((etape, index) => (
                     <div key={index} className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="text-lg font-semibold text-blue-900 mb-1">{etape}</h4>
+                          <h4 className="text-lg font-semibold text-blue-900 mb-1">{etape.ville}</h4>
                           <p className="text-blue-700">Étape intermédiaire {index + 1}</p>
                         </div>
                         <div className="text-blue-500">
@@ -383,12 +420,12 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                   <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-2xl p-6 border border-red-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-xl font-bold text-red-900 mb-2">{announcement.destination}</h4>
+                        <h4 className="text-xl font-bold text-red-900 mb-2">{announcement.trajet.destination.ville}</h4>
                         <p className="text-red-700 font-medium">Destination finale</p>
-                        {announcement.heureArriveeEstimee && (
+                        {announcement.planning.dateArriveeEstimee && (
                           <div className="flex items-center space-x-1 mt-3 text-sm text-red-600">
                             <Clock className="h-4 w-4" />
-                            <span>Arrivée estimée: {formatTime(announcement.heureArriveeEstimee)}</span>
+                            <span>Arrivée estimée: {formatTime(announcement.planning.dateArriveeEstimee)}</span>
                           </div>
                         )}
                       </div>
@@ -423,11 +460,11 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600 mb-1">Marque</p>
-                        <p className="text-lg font-semibold text-gray-900">{announcement.vehicule.marque}</p>
+                        <p className="text-lg font-semibold text-gray-900">{announcement.vehicule.marque || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600 mb-1">Modèle</p>
-                        <p className="text-lg font-semibold text-gray-900">{announcement.vehicule.modele}</p>
+                        <p className="text-lg font-semibold text-gray-900">{announcement.vehicule.modele || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600 mb-1">Immatriculation</p>
@@ -474,16 +511,16 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                         <Weight className="h-4 w-4 text-purple-600" />
                         <span className="text-sm font-medium text-purple-800">Poids max</span>
                       </div>
-                      <p className="text-xl font-bold text-purple-900">{announcement.capaciteDisponible} kg</p>
+                      <p className="text-xl font-bold text-purple-900">{announcement.capacite.poidsMax} kg</p>
                     </div>
                     
-                    {announcement.dimensionsMax && (
+                    {announcement.capacite.dimensionsMax && (
                       <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
                         <div className="flex items-center space-x-2 mb-2">
                           <Ruler className="h-4 w-4 text-blue-600" />
                           <span className="text-sm font-medium text-blue-800">Dimensions</span>
                         </div>
-                        <p className="text-sm font-semibold text-blue-900">{announcement.dimensionsMax}</p>
+                        <p className="text-sm font-semibold text-blue-900">{`${announcement.capacite.dimensionsMax.longueur}x${announcement.capacite.dimensionsMax.largeur}x${announcement.capacite.dimensionsMax.hauteur} cm`}</p>
                       </div>
                     )}
                   </div>
@@ -594,7 +631,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                       <Star className="h-4 w-4 text-yellow-400 fill-current" />
                       <span className="font-medium">{announcement.conducteur.rating}</span>
                       <span className="text-gray-500 text-sm">
-                        ({announcement.conducteur.reviewsCount || 0} avis)
+                        ({announcement.conducteur.statistiques?.reviewsCount || 0} avis)
                       </span>
                     </div>
                   )}
@@ -637,7 +674,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                     <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                       <CheckCircle className="h-6 w-6 text-blue-600" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{announcement.conducteur.stats?.totalTrips || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900">{announcement.conducteur.statistiques?.totalTrips || 0}</p>
                     <p className="text-sm text-gray-600">Trajets totaux</p>
                   </div>
                   
@@ -645,7 +682,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                     <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                       <Star className="h-6 w-6 text-green-600" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{announcement.conducteur.stats?.completedTrips || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900">{announcement.conducteur.statistiques?.completedTrips || 0}</p>
                     <p className="text-sm text-gray-600">Terminés</p>
                   </div>
                   
@@ -653,7 +690,7 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
                     <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                       <Users className="h-6 w-6 text-purple-600" />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{announcement.conducteur.reviewsCount || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900">{announcement.conducteur.statistiques?.reviewsCount || 0}</p>
                     <p className="text-sm text-gray-600">Avis clients</p>
                   </div>
                   
@@ -713,14 +750,14 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
       </div>
 
       {/* Description */}
-      {announcement.description && (
+      {announcement.details && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mt-8">
           <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-3">
             <Info className="h-6 w-6 text-blue-500" />
             <span>Description détaillée</span>
           </h3>
           <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-            <p className="text-gray-700 leading-relaxed text-lg">{announcement.description}</p>
+            <p className="text-gray-700 leading-relaxed text-lg">{announcement.details.description}</p>
           </div>
         </div>
       )}
@@ -755,19 +792,19 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
             </p>
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl border border-blue-200">
               <div className="flex items-center space-x-3 text-lg font-semibold mb-3">
-                <span>{announcement.lieuDepart}</span>
+                <span>{announcement.trajet.depart.ville}</span>
                 <ArrowRight className="h-5 w-5 text-gray-400" />
-                <span>{announcement.destination}</span>
+                <span>{announcement.trajet.destination.ville}</span>
               </div>
                               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-4 w-4" />
-                  <span>{formatDate(announcement.dateDepart)}</span>
+                  <span>{formatDate(announcement.planning.dateDepart)}</span>
                 </div>
-                {announcement.heureDepart && (
+                {announcement.planning.dateDepart && (
                   <div className="flex items-center space-x-1">
                     <Clock className="h-4 w-4" />
-                    <span>{formatTime(announcement.heureDepart)}</span>
+                    <span>{formatTime(announcement.planning.dateDepart)}</span>
                   </div>
                 )}
               </div>
@@ -793,4 +830,4 @@ const AnnouncementDetails = ({ announcement, onClose }) => {
   );
 };
 
-export default AnnouncementDetails;
+export default AnnonceDetails;

@@ -21,8 +21,20 @@ const createAnnonce = async (req, res) => {
         message: 'Seuls les conducteurs peuvent créer des annonces'
       });
     }
-    
-    const annonce = await Annonce.create(annonceData);
+
+    // Validation manuelle améliorée
+    const annonce = new Annonce(annonceData);
+    const validationError = annonce.validateSync();
+    if (validationError) {
+      const errors = Object.values(validationError.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Certains champs sont manquants ou invalides.",
+        errors: errors
+      });
+    }
+
+    await annonce.save();
     
     // Populer les données du conducteur
     await annonce.populate('conducteur', 'nom prenom photo badges');
@@ -41,6 +53,15 @@ const createAnnonce = async (req, res) => {
     
   } catch (error) {
     console.error('Erreur création annonce:', error);
+    // Gérer les erreurs de validation qui ne sont pas attrapées par validateSync (ex: erreurs uniques)
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+       return res.status(400).json({
+        success: false,
+        message: 'Erreur de validation.',
+        errors: errors
+      });
+    }
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la création de l\'annonce',

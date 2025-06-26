@@ -112,11 +112,11 @@ const Header = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo amélioré */}
             <Link to="/" className="flex items-center space-x-3 group">
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-2.5 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105">
+              <div className="bg-gradient-to-r from-yellow-400 to-yellow-400 p-2.5 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105">
                 <Truck className="h-6 w-6 text-white" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                <span className="text-xl font-bold text-gray-900 group-hover:text-yellow-400 transition-colors">
                   TransportConnect
                 </span>
                 <span className="text-xs text-gray-500 -mt-1 hidden sm:block">
@@ -136,8 +136,8 @@ const Header = () => {
                     to={item.path}
                     className={`group relative flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? 'text-blue-600 bg-blue-50 shadow-sm'
-                        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                        ? 'text-yellow-400 bg-yellow-50 shadow-sm'
+                        : 'text-gray-700 hover:text-yellow-400 hover:bg-gray-50'
                     }`}
                   >
                     <Icon className={`h-4 w-4 transition-transform duration-200 ${
@@ -145,7 +145,7 @@ const Header = () => {
                     }`} />
                     <span>{item.label}</span>
                     {isActive && (
-                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full"></div>
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-yellow-400 rounded-full"></div>
                     )}
                   </Link>
                 );
@@ -172,7 +172,7 @@ const Header = () => {
                   <div className="relative" ref={notificationRef}>
                     <button
                       onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                      className="relative p-2.5 text-gray-600 hover:text-blue-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl transition-all duration-200"
+                      className="relative p-2.5 text-gray-600 hover:text-yellow-400 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded-xl transition-all duration-200"
                     >
                       <Bell className="h-5 w-5" />
                       {unreadCount > 0 && (
@@ -189,7 +189,7 @@ const Header = () => {
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
                             {unreadCount > 0 && (
-                              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                              <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-1 rounded-full">
                                 {unreadCount} nouveau{unreadCount > 1 ? 'x' : ''}
                               </span>
                             )}
@@ -213,7 +213,7 @@ const Header = () => {
                               >
                                 <div className="flex items-start space-x-3">
                                   <div className={`w-2 h-2 rounded-full mt-2 ${
-                                    !notification.read ? 'bg-blue-500' : 'bg-gray-300'
+                                    !notification.read ? 'bg-yellow-500' : 'bg-gray-300'
                                   }`}></div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm text-gray-900 font-medium line-clamp-2">
@@ -231,7 +231,7 @@ const Header = () => {
                         
                         {notifications.length > 5 && (
                           <div className="p-3 border-t border-gray-100 bg-gray-50">
-                            <button className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium">
+                            <button className="w-full text-center text-sm text-yellow-400 hover:text-yellow-500 font-medium">
                               Voir toutes les notifications
                             </button>
                           </div>
@@ -246,7 +246,7 @@ const Header = () => {
                       onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                       className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                     >
-                      <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-lg">
+                      <div className="w-9 h-9 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-lg">
                         {getInitials(`${user?.prenom} ${user?.nom}`)}
                       </div>
                       <div className="hidden sm:block text-left">
@@ -267,7 +267,7 @@ const Header = () => {
                       <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 animate-in slide-in-from-top-2 duration-200">
                         <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
                           <div className="flex items-center space-x-3">
-                            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-lg font-semibold">
+                            <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white text-lg font-semibold">
                               {getInitials(`${user?.prenom} ${user?.nom}`)}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -318,13 +318,13 @@ const Header = () => {
                 <div className="flex items-center space-x-3">
                   <Link
                     to="/login"
-                    className="text-gray-700 hover:text-blue-600 font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200"
+                    className="text-gray-700 hover:text-yellow-400 font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200"
                   >
                     Connexion
                   </Link>
                   <Link
                     to="/register"
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-6 py-2.5 rounded-lg font-medium hover:from-yellow-500 hover:to-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Inscription
                   </Link>
@@ -334,7 +334,7 @@ const Header = () => {
               {/* Menu Mobile Button */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="lg:hidden p-2.5 rounded-xl text-gray-600 hover:text-blue-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                className="lg:hidden p-2.5 rounded-xl text-gray-600 hover:text-yellow-400 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all duration-200"
               >
                 {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -354,8 +354,8 @@ const Header = () => {
                       to={item.path}
                       className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${
                         isActive
-                          ? 'text-blue-600 bg-blue-50'
-                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                          ? 'text-yellow-400 bg-yellow-50'
+                          : 'text-gray-700 hover:text-yellow-400 hover:bg-gray-50'
                       }`}
                       onClick={() => setIsMenuOpen(false)}
                     >
@@ -371,14 +371,14 @@ const Header = () => {
                 <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
                   <Link
                     to="/login"
-                    className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-xl font-medium transition-all duration-200"
+                    className="block px-4 py-3 text-gray-700 hover:text-yellow-400 hover:bg-gray-50 rounded-xl font-medium transition-all duration-200"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Connexion
                   </Link>
                   <Link
                     to="/register"
-                    className="block px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium text-center transition-all duration-200"
+                    className="block px-4 py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white rounded-xl font-medium text-center transition-all duration-200"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Inscription

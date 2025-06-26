@@ -16,44 +16,153 @@ import {
   Navigation,
   Weight,
   Timer,
-  BadgeCheck
+  BadgeCheck,
+  Edit,
+  Trash2,
+  Phone,
+  Mail
 } from 'lucide-react';
-import { formatDate, formatTime, getInitials, getStatusColor, getStatusLabel } from '../../utils/helpers';
-import { useAuth } from '../../context/AuthContext';
-import { demandeAPI } from '../../utils/api';
-import toast from 'react-hot-toast';
-import { ConfirmationModal } from '../common/Modal';
 
-const AnnouncementCard = ({ announcement, onClick, showActions = false, variant = 'default' }) => {
-  const { user, isSender } = useAuth();
-  const [showDemandModal, setShowDemandModal] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+// Fonctions utilitaires
+const formatDate = (date) => {
+  if (!date) return '';
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(new Date(date));
+};
 
-  const handleSendDemand = async () => {
-    try {
-      setSending(true);
-      await demandeAPI.create({
-        annonce: announcement._id,
-        expediteur: user._id,
-        message: `Demande pour le transport de ${announcement.lieuDepart} vers ${announcement.destination}`
-      });
-      
-      toast.success('Demande envoyée avec succès !');
-      setShowDemandModal(false);
-    } catch (error) {
-      toast.error('Erreur lors de l\'envoi de la demande');
-    } finally {
-      setSending(false);
-    }
+const formatTime = (time) => {
+  if (!time) return '';
+  return time.substring(0, 5);
+};
+
+const getInitials = (name) => {
+  if (!name) return 'U';
+  return name.split(' ').map(n => n[0]).join('').toUpperCase();
+};
+
+const getStatusColor = (status) => {
+  const colors = {
+    active: 'green',
+    pending: 'yellow', 
+    accepted: 'blue',
+    completed: 'purple',
+    cancelled: 'red',
+    inactive: 'gray'
   };
+  return colors[status] || 'gray';
+};
+
+const getStatusLabel = (status) => {
+  const labels = {
+    active: 'Actif',
+    pending: 'En attente',
+    accepted: 'Accepté', 
+    completed: 'Terminé',
+    cancelled: 'Annulé',
+    inactive: 'Inactif'
+  };
+  return labels[status] || status;
+};
+
+// Types de marchandises
+const CARGO_TYPES = {
+  electromenager: 'Électroménager',
+  mobilier: 'Mobilier',
+  vetements: 'Vêtements',
+  alimentation: 'Alimentation',
+  electronique: 'Électronique',
+  documents: 'Documents',
+  medicaments: 'Médicaments',
+  fragile: 'Fragile',
+  produits_chimiques: 'Produits chimiques',
+  materiaux_construction: 'Matériaux de construction',
+  autre: 'Autre'
+};
+
+const VEHICLE_TYPES = {
+  camionnette: 'Camionnette',
+  camion: 'Camion',
+  fourgon: 'Fourgon',
+  voiture: 'Voiture'
+};
+
+// Fonction pour extraire les données de l'annonce de manière sécurisée
+const extractAnnouncementData = (announcement) => {
+  return {
+    _id: announcement._id,
+    // Route
+    lieuDepart: announcement.lieuDepart || announcement.trajet?.depart?.ville || '',
+    destination: announcement.destination || announcement.trajet?.destination?.ville || '',
+    etapesIntermediaires: announcement.etapesIntermediaires || announcement.trajet?.etapesIntermediaires || [],
+    
+    // Planning
+    dateDepart: announcement.dateDepart || announcement.planning?.dateDepart || '',
+    heureDepart: announcement.heureDepart || announcement.planning?.heureDepart || '',
+    
+    // Transport
+    typeMarchandise: announcement.typeMarchandise || 
+      (Array.isArray(announcement.typesMarchandise) ? announcement.typesMarchandise[0] : announcement.typesMarchandise) || '',
+    capaciteDisponible: announcement.capaciteDisponible || announcement.capacite?.poidsMax || 0,
+    dimensionsMax: announcement.dimensionsMax || announcement.capacite?.dimensionsMax || null,
+    
+    // Prix
+    prix: announcement.prix || announcement.tarification?.prix || announcement.tarification?.prixFixe || null,
+    
+    // Véhicule
+    vehicule: announcement.vehicule || {},
+    
+    // Status
+    status: announcement.status || announcement.statut || 'active',
+    
+    // Description
+    description: announcement.description || '',
+    
+    // Conducteur
+    conducteur: announcement.conducteur || {},
+    
+    // Stats
+    vuesCount: announcement.vuesCount || announcement.statistiques?.nombreVues || 0,
+    demandesCount: announcement.demandesCount || announcement.statistiques?.nombreDemandes || 0,
+    
+    // Dates
+    createdAt: announcement.createdAt || new Date(),
+    updatedAt: announcement.updatedAt || null
+  };
+};
+
+const AnnouncementCard = ({ 
+  announcement, 
+  onClick, 
+  onEdit, 
+  onDelete,
+  showActions = false, 
+  variant = 'default',
+  currentUser = null
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+
+  // Extraire les données de manière sécurisée
+  const data = extractAnnouncementData(announcement);
 
   const canSendDemand = () => {
-    return isSender() && announcement.conducteur?._id !== user._id && announcement.status === 'active';
+    return currentUser && 
+           currentUser.role === 'expediteur' && 
+           data.conducteur._id !== currentUser._id && 
+           data.status === 'active';
+  };
+
+  const isOwner = () => {
+    return currentUser && data.conducteur._id === currentUser._id;
   };
 
   const getPriorityBadge = () => {
-    const hoursUntilDeparture = Math.floor((new Date(announcement.dateDepart) - new Date()) / (1000 * 60 * 60));
+    if (!data.dateDepart) return null;
+    
+    const hoursUntilDeparture = Math.floor((new Date(data.dateDepart) - new Date()) / (1000 * 60 * 60));
     if (hoursUntilDeparture <= 24) {
       return { label: 'Urgent', color: 'bg-red-100 text-red-800 border-red-200', icon: Zap };
     } else if (hoursUntilDeparture <= 72) {
@@ -64,17 +173,25 @@ const AnnouncementCard = ({ announcement, onClick, showActions = false, variant 
 
   const priority = getPriorityBadge();
 
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(announcement);
+    }
+    setShowConfirmDelete(false);
+  };
+
   return (
     <>
       <div 
-        className={`group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl border border-gray-100 hover:border-gray-200 transition-all duration-500 cursor-pointer transform hover:-translate-y-2 ${
+        className={`group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl border border-gray-200 hover:border-blue-300 transition-all duration-500 cursor-pointer transform hover:-translate-y-1 ${
           variant === 'compact' ? 'p-4' : 'p-6'
         }`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={onClick}
       >
         {/* Background Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/60 via-white to-purple-50/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         
         {/* Priority Badge */}
         {priority && (
@@ -86,14 +203,52 @@ const AnnouncementCard = ({ announcement, onClick, showActions = false, variant 
 
         <div className="relative z-10">
           {/* Header Section */}
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0">
-              {/* Route with Enhanced Visual */}
+              {/* Status Badge */}
+              <div className="flex items-center justify-between mb-3">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1 ${
+                  data.status === 'active' 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                    : 'bg-gray-100 text-gray-800 border border-gray-200'
+                }`}>
+                  {data.status === 'active' && <CheckCircle className="h-3 w-3" />}
+                  <span>{getStatusLabel(data.status)}</span>
+                </span>
+                
+                {/* Action Buttons pour le propriétaire */}
+                {isOwner() && showActions && (
+                  <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onEdit) onEdit(announcement);
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Modifier"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowConfirmDelete(true);
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Route avec Visual Amélioré */}
               <div className="mb-4">
-                <div className="flex items-center space-x-3 mb-3">
+                <div className="flex items-center space-x-3 mb-2">
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-sm"></div>
-                    <span className="font-bold text-gray-900 text-lg truncate">{announcement.lieuDepart}</span>
+                    <span className="font-bold text-gray-900 text-lg truncate">{data.lieuDepart}</span>
                   </div>
                   
                   <div className="flex-1 relative">
@@ -106,40 +261,24 @@ const AnnouncementCard = ({ announcement, onClick, showActions = false, variant 
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    <span className="font-bold text-gray-900 text-lg truncate">{announcement.destination}</span>
+                    <span className="font-bold text-gray-900 text-lg truncate">{data.destination}</span>
                     <div className="w-3 h-3 bg-red-500 rounded-full shadow-sm"></div>
                   </div>
                 </div>
 
-                {/* Distance and Duration */}
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                  {announcement.distance && (
-                    <div className="flex items-center space-x-1">
-                      <Navigation className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium">{announcement.distance} km</span>
-                    </div>
-                  )}
-                  {announcement.dureeEstimee && (
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-4 w-4 text-purple-500" />
-                      <span className="font-medium">{announcement.dureeEstimee}h</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Intermediate Steps */}
-                {announcement.etapesIntermediaires && announcement.etapesIntermediaires.length > 0 && (
-                  <div className="mt-3 p-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
+                {/* Étapes intermédiaires */}
+                {data.etapesIntermediaires && data.etapesIntermediaires.length > 0 && (
+                  <div className="mt-2 p-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
                     <p className="text-xs font-medium text-gray-700 mb-1">Étapes intermédiaires:</p>
                     <div className="flex flex-wrap gap-1">
-                      {announcement.etapesIntermediaires.slice(0, 2).map((etape, index) => (
+                      {data.etapesIntermediaires.slice(0, 2).map((etape, index) => (
                         <span key={index} className="inline-flex items-center px-2 py-0.5 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full text-xs text-gray-700">
-                          {etape}
+                          {typeof etape === 'string' ? etape : etape.ville}
                         </span>
                       ))}
-                      {announcement.etapesIntermediaires.length > 2 && (
+                      {data.etapesIntermediaires.length > 2 && (
                         <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-600">
-                          +{announcement.etapesIntermediaires.length - 2}
+                          +{data.etapesIntermediaires.length - 2}
                         </span>
                       )}
                     </div>
@@ -147,176 +286,158 @@ const AnnouncementCard = ({ announcement, onClick, showActions = false, variant 
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Status Badge */}
-            <div className="flex flex-col items-end space-y-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1 ${
-                announcement.status === 'active' 
-                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
-                  : 'bg-gray-100 text-gray-800 border border-gray-200'
-              }`}>
-                {announcement.status === 'active' && <CheckCircle className="h-3 w-3" />}
-                <span>{getStatusLabel(announcement.status)}</span>
-              </span>
+          {/* Date et Heure */}
+          <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 border border-gray-100 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{formatDate(data.dateDepart)}</p>
+                  <p className="text-xs text-gray-600">Date de départ</p>
+                </div>
+              </div>
               
-              {announcement.conducteur?.verified && (
-                <div className="flex items-center space-x-1 text-xs">
-                  <BadgeCheck className="h-4 w-4 text-blue-500" />
-                  <span className="text-blue-600 font-medium">Vérifié</span>
+              {data.heureDepart && (
+                <div className="flex items-center space-x-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 text-right">{formatTime(data.heureDepart)}</p>
+                    <p className="text-xs text-gray-600">Heure prévue</p>
+                  </div>
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Clock className="h-4 w-4 text-purple-600" />
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Main Content */}
-          <div onClick={onClick} className="space-y-4">
-            {/* Date and Time Enhanced */}
-            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 border border-gray-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Calendar className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{formatDate(announcement.dateDepart)}</p>
-                    <p className="text-xs text-gray-600">Date de départ</p>
-                  </div>
-                </div>
-                
-                {announcement.heureDepart && (
-                  <div className="flex items-center space-x-3">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 text-right">{formatTime(announcement.heureDepart)}</p>
-                      <p className="text-xs text-gray-600">Heure prévue</p>
-                    </div>
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <Clock className="h-4 w-4 text-purple-600" />
-                    </div>
-                  </div>
-                )}
+          {/* Informations Cargo et Capacité */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-4 border border-orange-100">
+              <div className="flex items-center space-x-2 mb-2">
+                <Package className="h-4 w-4 text-orange-600" />
+                <span className="text-xs font-medium text-orange-800 uppercase tracking-wide">Type</span>
               </div>
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                {CARGO_TYPES[data.typeMarchandise] || data.typeMarchandise || 'Non spécifié'}
+              </p>
             </div>
-
-            {/* Cargo and Capacity Information */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-4 border border-orange-100">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Package className="h-4 w-4 text-orange-600" />
-                  <span className="text-xs font-medium text-orange-800 uppercase tracking-wide">Type</span>
-                </div>
-                <p className="text-sm font-semibold text-gray-900 truncate">{announcement.typeMarchandise}</p>
+            
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+              <div className="flex items-center space-x-2 mb-2">
+                <Weight className="h-4 w-4 text-green-600" />
+                <span className="text-xs font-medium text-green-800 uppercase tracking-wide">Capacité</span>
               </div>
-              
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Weight className="h-4 w-4 text-green-600" />
-                  <span className="text-xs font-medium text-green-800 uppercase tracking-wide">Capacité</span>
-                </div>
-                <p className="text-sm font-semibold text-gray-900">
-                  {announcement.capaciteDisponible}
-                  <span className="text-xs text-gray-600 ml-1">kg</span>
-                </p>
-              </div>
+              <p className="text-sm font-semibold text-gray-900">
+                {data.capaciteDisponible}
+                <span className="text-xs text-gray-600 ml-1">kg</span>
+              </p>
             </div>
-
-            {/* Price Information */}
-            {announcement.prix && (
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-yellow-800 uppercase tracking-wide mb-1">Prix indicatif</p>
-                    <p className="text-lg font-bold text-gray-900">{announcement.prix} MAD</p>
-                  </div>
-                  <div className="text-yellow-600">
-                    💰
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Vehicle Information */}
-            {announcement.vehicule && (
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <Truck className="h-5 w-5 text-gray-600" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">
-                    {announcement.vehicule.marque} {announcement.vehicule.modele}
-                  </p>
-                  <p className="text-xs text-gray-600 capitalize">{announcement.vehicule.type}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Description Preview */}
-            {announcement.description && variant !== 'compact' && (
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-sm text-gray-700 line-clamp-2 leading-relaxed">
-                  {announcement.description}
-                </p>
-              </div>
-            )}
           </div>
 
-          {/* Enhanced Footer */}
-          <div className="mt-6 pt-6 border-t border-gray-100">
+          {/* Informations Prix */}
+          {data.prix && (
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200 mb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-yellow-800 uppercase tracking-wide mb-1">Prix indicatif</p>
+                  <p className="text-lg font-bold text-gray-900">{data.prix} MAD</p>
+                </div>
+                <div className="text-yellow-600 text-xl">
+                  💰
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Informations Véhicule */}
+          {data.vehicule && data.vehicule.type && (
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl border border-gray-100 mb-4">
+              <Truck className="h-5 w-5 text-gray-600" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">
+                  {data.vehicule.marque} {data.vehicule.modele}
+                </p>
+                <p className="text-xs text-gray-600 capitalize">
+                  {VEHICLE_TYPES[data.vehicule.type] || data.vehicule.type}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Description Preview */}
+          {data.description && variant !== 'compact' && (
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 mb-4">
+              <p className="text-sm text-gray-700 line-clamp-2 leading-relaxed">
+                {data.description}
+              </p>
+            </div>
+          )}
+
+          {/* Footer Amélioré */}
+          <div className="pt-4 border-t border-gray-100">
             <div className="flex items-center justify-between">
-              {/* Driver Information */}
+              {/* Informations Conducteur */}
               <div className="flex items-center space-x-3">
                 <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                    {announcement.conducteur?.avatar ? (
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-md">
+                    {data.conducteur.avatar ? (
                       <img
-                        src={announcement.conducteur.avatar}
+                        src={data.conducteur.avatar}
                         alt="Conducteur"
-                        className="w-12 h-12 rounded-full object-cover"
+                        className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
                       <span className="text-sm font-bold text-white">
-                        {getInitials(`${announcement.conducteur?.prenom} ${announcement.conducteur?.nom}`)}
+                        {getInitials(`${data.conducteur.prenom} ${data.conducteur.nom}`)}
                       </span>
                     )}
                   </div>
                   
-                  {announcement.conducteur?.verified && (
+                  {data.conducteur.verified && (
                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
                       <CheckCircle className="h-2.5 w-2.5 text-white" />
                     </div>
                   )}
                 </div>
                 
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-gray-900 truncate">
-                    {announcement.conducteur?.prenom} {announcement.conducteur?.nom}
+                    {data.conducteur.prenom} {data.conducteur.nom}
                   </p>
                   
                   <div className="flex items-center space-x-3">
-                    {announcement.conducteur?.rating && (
+                    {data.conducteur.rating && (
                       <div className="flex items-center space-x-1">
                         <Star className="h-3 w-3 text-yellow-400 fill-current" />
                         <span className="text-xs font-medium text-gray-700">
-                          {announcement.conducteur.rating}
+                          {data.conducteur.rating}
                         </span>
                         <span className="text-xs text-gray-500">
-                          ({announcement.conducteur.reviewsCount || 0})
+                          ({data.conducteur.reviewsCount || 0})
                         </span>
                       </div>
                     )}
                     
-                    {announcement.conducteur?.totalTrips && (
+                    {data.conducteur.totalTrips && (
                       <span className="text-xs text-gray-500">
-                        {announcement.conducteur.totalTrips} trajets
+                        {data.conducteur.totalTrips} trajets
                       </span>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Boutons d'Action */}
               <div className="flex items-center space-x-2">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onClick();
+                    if (onClick) onClick(announcement);
                   }}
                   className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 group/btn"
                   title="Voir les détails"
@@ -324,68 +445,123 @@ const AnnouncementCard = ({ announcement, onClick, showActions = false, variant 
                   <Eye className="h-4 w-4 group-hover/btn:scale-110 transition-transform duration-200" />
                 </button>
                 
-                {showActions && canSendDemand() && (
+                {canSendDemand() && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setShowDemandModal(true);
+                      // Logique d'envoi de demande
+                      console.log('Envoyer demande pour:', data._id);
                     }}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-1"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-1"
                   >
                     <MessageCircle className="h-3 w-3" />
                     <span>Demander</span>
                   </button>
                 )}
+
+                {isOwner() && (
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (data.conducteur.telephone) {
+                          window.open(`tel:${data.conducteur.telephone}`);
+                        }
+                      }}
+                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Appeler"
+                    >
+                      <Phone className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (data.conducteur.email) {
+                          window.open(`mailto:${data.conducteur.email}`);
+                        }
+                      }}
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Email"
+                    >
+                      <Mail className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Stats Bar */}
-          {(announcement.vuesCount || announcement.demandesCount) && (
+          {/* Barre de Statistiques */}
+          {(data.vuesCount > 0 || data.demandesCount > 0) && (
             <div className="mt-4 pt-4 border-t border-gray-100">
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-1">
                     <Eye className="h-3 w-3" />
-                    <span>{announcement.vuesCount || 0} vues</span>
+                    <span>{data.vuesCount} vues</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <MessageCircle className="h-3 w-3" />
-                    <span>{announcement.demandesCount || 0} demandes</span>
+                    <span>{data.demandesCount} demandes</span>
                   </div>
                 </div>
                 
                 <div className="text-gray-400">
-                  {Math.floor((new Date(announcement.dateDepart) - new Date()) / (1000 * 60 * 60 * 24))} jours restants
+                  {data.dateDepart && Math.floor((new Date(data.dateDepart) - new Date()) / (1000 * 60 * 60 * 24))} jours restants
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Hover Animation Effects */}
+        {/* Effets d'Animation au Survol */}
         <div className={`absolute inset-0 bg-gradient-to-r from-blue-400/5 to-purple-400/5 rounded-2xl transition-opacity duration-500 ${
           isHovered ? 'opacity-100' : 'opacity-0'
         }`}></div>
         
-        {/* Floating Action Hint */}
-        {isHovered && showActions && canSendDemand() && (
+        {/* Hint d'Action Flottant */}
+        {isHovered && canSendDemand() && (
           <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-lg animate-pulse">
             Cliquez pour demander ce transport
           </div>
         )}
       </div>
 
-      {/* Send Demand Modal */}
-      <ConfirmationModal
-        isOpen={showDemandModal}
-        onClose={() => setShowDemandModal(false)}
-        onConfirm={handleSendDemand}
-        title="Envoyer une demande"
-        message={`Voulez-vous envoyer une demande de transport à ${announcement.conducteur?.prenom} ${announcement.conducteur?.nom} pour le trajet ${announcement.lieuDepart} → ${announcement.destination} ?`}
-        confirmText={sending ? "Envoi..." : "Envoyer"}
-        type="info"
-      />
+      {/* Modal de Confirmation de Suppression */}
+      {showConfirmDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Supprimer l'annonce</h3>
+                <p className="text-sm text-gray-600">Cette action est irréversible</p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 mb-6">
+              Êtes-vous sûr de vouloir supprimer l'annonce "{data.lieuDepart} → {data.destination}" ?
+            </p>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowConfirmDelete(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

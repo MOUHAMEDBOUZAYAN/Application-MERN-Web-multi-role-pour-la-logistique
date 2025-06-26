@@ -8,14 +8,15 @@ import {
   X, 
   Info, 
   Truck, 
-  Star, 
   Eye,
   ArrowRight,
   CheckCircle,
   AlertCircle,
   Route,
   Weight,
-  DollarSign
+  DollarSign,
+  Save,
+  ArrowLeft
 } from 'lucide-react';
 
 const CITIES = [
@@ -35,7 +36,7 @@ const CARGO_TYPES = {
   fragile: 'Fragile',
   produits_chimiques: 'Produits chimiques',
   materiaux_construction: 'Matériaux de construction',
-  autre: 'Autre',
+  autre: 'Autre'
 };
 
 const VEHICLE_TYPES = {
@@ -45,7 +46,24 @@ const VEHICLE_TYPES = {
   voiture: 'Voiture'
 };
 
-// Fonction pour mapper les données d'annonce existante
+const PAYMENT_METHODS = {
+  especes: 'Espèces',
+  virement: 'Virement bancaire',
+  paypal: 'PayPal',
+  carte_bancaire: 'Carte bancaire'
+};
+
+// Fonctions utilitaires
+const formatDate = (date) => {
+  if (!date) return '';
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date(date));
+};
+
+// Fonction pour mapper les données d'annonce existante CORRIGÉE
 const mapExistingAnnouncement = (announcement) => {
   if (!announcement) return null;
 
@@ -69,20 +87,23 @@ const mapExistingAnnouncement = (announcement) => {
     vehiculeModele: announcement.vehicule?.modele || '',
     description: announcement.description || announcement.details?.description || '',
     instructionsSpeciales: announcement.instructionsSpeciales || announcement.details?.instructionsSpeciales || '',
-    status: announcement.status || announcement.statut || 'active'
+    status: announcement.status || announcement.statut || 'active',
+    paiementAccepte: announcement.conditions?.paiementAccepte || ['especes']
   };
 };
 
-const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
+const AnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState({});
   const isEditing = !!announcement;
 
-  // Initialiser les données du formulaire
+  // Initialiser les données du formulaire CORRIGÉ
   const [formData, setFormData] = useState(() => {
     if (isEditing) {
-      return mapExistingAnnouncement(announcement);
+      const mappedData = mapExistingAnnouncement(announcement);
+      console.log('Données mappées pour édition:', mappedData);
+      return mappedData;
     }
     return {
       lieuDepart: '',
@@ -99,7 +120,8 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
       vehiculeModele: '',
       description: '',
       instructionsSpeciales: '',
-      status: 'active'
+      status: 'active',
+      paiementAccepte: ['especes']
     };
   });
 
@@ -152,6 +174,15 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
     }
   };
 
+  const handlePaymentMethodChange = (method) => {
+    setFormData(prev => {
+      const newMethods = prev.paiementAccepte.includes(method)
+        ? prev.paiementAccepte.filter(m => m !== method)
+        : [...prev.paiementAccepte, method];
+      return { ...prev, paiementAccepte: newMethods };
+    });
+  };
+
   const addIntermediateStep = () => {
     setFormData(prev => ({ 
       ...prev, 
@@ -195,18 +226,21 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
     try {
       setLoading(true);
 
-      // Préparer les données au format backend
+      // Préparer les données au format backend CORRIGÉ
       const submissionData = {
-        titre: `Trajet de ${formData.lieuDepart} à ${formData.destination}`,
+        titre: `Transport de ${formData.lieuDepart} à ${formData.destination}`,
         trajet: {
           depart: { ville: formData.lieuDepart },
           destination: { ville: formData.destination },
-          etapes: formData.etapesIntermediaires.filter(etape => etape.trim() !== '')
+          etapesIntermediaires: formData.etapesIntermediaires
+            .filter(etape => etape.trim() !== '')
+            .map((etape, index) => ({ ville: etape, ordre: index + 1 }))
         },
         planning: {
           dateDepart: formData.dateDepart && formData.heureDepart 
             ? new Date(`${formData.dateDepart}T${formData.heureDepart}:00`).toISOString()
-            : new Date(`${formData.dateDepart}T12:00:00`).toISOString()
+            : new Date(`${formData.dateDepart}T12:00:00`).toISOString(),
+          heureDepart: formData.heureDepart
         },
         capacite: {
           poidsMax: Number(formData.capaciteDisponible),
@@ -227,24 +261,48 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
         typesMarchandise: [formData.typeMarchandise],
         tarification: {
           typeTarification: "prix_fixe",
-          prix: Number(formData.prix) || 0
+          prix: Number(formData.prix) || 0,
+          prixFixe: Number(formData.prix) || 0
         },
+        description: formData.description,
         details: {
           description: formData.description,
           instructionsSpeciales: formData.instructionsSpeciales
         },
-        statut: formData.status || 'active'
+        statut: formData.status || 'active',
+        conditions: {
+          paiementAccepte: formData.paiementAccepte
+        }
       };
 
+      console.log('Données à envoyer au backend:', submissionData);
+
       await onSubmit(submissionData);
+
     } catch (error) {
       console.error('Erreur lors de la soumission:', error);
+      
+      // Gestion améliorée des erreurs venant de l'API
+      if (error.response && error.response.data && error.response.data.errors) {
+        // Erreurs de validation spécifiques du backend
+        const backendErrors = error.response.data.errors.reduce((acc, currentError, index) => {
+          acc[`backend_${index}`] = currentError;
+          return acc;
+        }, {});
+        setErrors(backendErrors);
+      } else if (error.response && error.response.data && error.response.data.message) {
+        // Message d'erreur général du backend
+        setErrors({ submit: error.response.data.message });
+      } else {
+        // Erreur générique
+        setErrors({ submit: error.message || 'Une erreur inattendue est survenue.' });
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Rendu des étapes
+  // Rendu des indicateurs d'étapes
   const renderStepIndicator = () => (
     <div className="mb-8">
       <div className="flex items-center justify-between">
@@ -284,6 +342,7 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
     </div>
   );
 
+  // Étape 1: Itinéraire
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
@@ -424,6 +483,7 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
     </div>
   );
 
+  // Étape 2: Planning
   const renderStep2 = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
@@ -477,12 +537,7 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
           </h3>
           <div className="space-y-2">
             <p className="text-gray-700">
-              <strong>Date :</strong> {new Date(formData.dateDepart).toLocaleDateString('fr-FR', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
+              <strong>Date :</strong> {formatDate(formData.dateDepart)}
             </p>
             {formData.heureDepart && (
               <p className="text-gray-700">
@@ -495,6 +550,7 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
     </div>
   );
 
+  // Étape 3: Transport
   const renderStep3 = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
@@ -594,18 +650,17 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type de véhicule</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Type de Véhicule *</label>
             <select
               value={formData.vehiculeType}
               onChange={(e) => handleInputChange('vehiculeType', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              {Object.entries(VEHICLE_TYPES).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
+              {Object.entries(VEHICLE_TYPES).map(([key, value]) => (
+                <option key={key} value={key}>{value}</option>
               ))}
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Marque (optionnel)</label>
             <input
@@ -616,7 +671,6 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Modèle (optionnel)</label>
             <input
@@ -632,6 +686,7 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
     </div>
   );
 
+  // Étape 4: Finalisation
   const renderStep4 = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
@@ -669,6 +724,31 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
             placeholder="Ex: Marchandises fragiles acceptées, point de rendez-vous spécifique..."
             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl transition-all duration-200 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 resize-none"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Méthodes de paiement acceptées *
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            {Object.entries(PAYMENT_METHODS).map(([key, label]) => (
+              <label key={key} className="flex items-center space-x-3 p-3 border-2 rounded-xl cursor-pointer hover:border-blue-500 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={formData.paiementAccepte.includes(key)}
+                  onChange={() => handlePaymentMethodChange(key)}
+                  className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-800">{label}</span>
+              </label>
+            ))}
+          </div>
+          {errors.paiementAccepte && (
+            <p className="mt-2 text-sm text-red-600 flex items-center">
+              <AlertCircle className="w-4 h-4 mr-1" />
+              {errors.paiementAccepte}
+            </p>
+          )}
         </div>
 
         {isEditing && (
@@ -723,7 +803,7 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-4 h-4 text-purple-500" />
                   <span className="text-sm font-medium">
-                    {new Date(formData.dateDepart).toLocaleDateString('fr-FR')}
+                    {formatDate(formData.dateDepart)}
                     {formData.heureDepart && ` à ${formData.heureDepart}`}
                   </span>
                 </div>
@@ -784,7 +864,7 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
         {/* Conseils pour optimiser l'annonce */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
           <h4 className="font-semibold text-yellow-800 mb-3 flex items-center">
-            <Star className="w-5 h-5 mr-2" />
+            <Eye className="w-5 h-5 mr-2" />
             Conseils pour optimiser votre annonce
           </h4>
           <ul className="space-y-2 text-sm text-yellow-700">
@@ -858,15 +938,18 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
               type="button"
               onClick={handleSubmit}
               disabled={loading}
-              className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 font-medium transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 font-medium transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               {loading ? (
-                <div className="flex items-center space-x-2">
+                <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span>{isEditing ? "Mise à jour..." : "Création..."}</span>
-                </div>
+                </>
               ) : (
-                isEditing ? 'Mettre à jour' : 'Créer l\'annonce'
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>{isEditing ? 'Mettre à jour' : 'Créer l\'annonce'}</span>
+                </>
               )}
             </button>
           )}
@@ -891,62 +974,4 @@ const ImprovedAnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
   );
 };
 
-// Exemple d'utilisation
-const ExampleUsage = () => {
-  const handleSubmit = async (data) => {
-    console.log('Données soumises:', data);
-    // Simuler une soumission
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    alert('Annonce créée avec succès!');
-  };
-
-  const handleCancel = () => {
-    console.log('Annulation');
-  };
-
-  // Exemple d'annonce existante pour le mode édition
-  const existingAnnouncement = {
-    _id: '1',
-    trajet: {
-      depart: { ville: 'Casablanca' },
-      destination: { ville: 'Rabat' },
-      etapesIntermediaires: ['Témara']
-    },
-    planning: {
-      dateDepart: '2024-01-15T10:00:00Z',
-      heureDepart: '10:00'
-    },
-    typesMarchandise: ['electronique'],
-    capacite: { 
-      poidsMax: 50,
-      dimensionsMax: { longueur: 100, largeur: 80, hauteur: 60 }
-    },
-    tarification: { prix: 200 },
-    vehicule: {
-      type: 'camionnette',
-      marque: 'Renault',
-      modele: 'Master'
-    },
-    description: 'Transport sécurisé pour électronique',
-    statut: 'active'
-  };
-
-  return (
-    <div>
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">Formulaire d'Annonce Amélioré</h1>
-        <p className="text-gray-600 mb-6">
-          Version professionnelle avec mapping automatique des données et validation robuste
-        </p>
-      </div>
-      
-      <ImprovedAnnouncementForm
-        announcement={null} // ou existingAnnouncement pour tester le mode édition
-        onSubmit={handleSubmit}
-        onCancel={handleCancel}
-      />
-    </div>
-  );
-};
-
-export default ExampleUsage;
+export default AnnouncementForm;
