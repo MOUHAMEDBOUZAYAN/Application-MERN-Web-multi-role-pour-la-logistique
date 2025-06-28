@@ -30,12 +30,13 @@ import {
 } from 'lucide-react';
 import { formatDate, formatTime, getInitials, formatPhoneNumber } from '../../utils/helpers';
 import { useAuth } from '../../context/AuthContext';
-import { demandeAPI, annonceAPI } from '../../utils/api';
+import { demandeAPI, annonceAPI, adminAPI } from '../../utils/api';
 import { ConfirmationModal } from '../common/Modal';
 import toast from 'react-hot-toast';
 
 const AnnonceDetails = ({ annonceId, onClose }) => {
-  const { user, isSender } = useAuth();
+  console.log('AnnonceDetails MOUNT', { annonceId });
+  const { user, isSender, isAdmin } = useAuth();
   const [announcement, setAnnouncement] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showDemandModal, setShowDemandModal] = useState(false);
@@ -46,14 +47,42 @@ const AnnonceDetails = ({ annonceId, onClose }) => {
   useEffect(() => {
     if (annonceId) {
       const fetchAnnonce = async () => {
+        setLoading(true);
+        let ann = null;
+        let response = null;
+        let triedAdmin = false;
         try {
-          setLoading(true);
-          const response = await annonceAPI.getById(annonceId);
-          // Robust parsing for all possible backend responses
-          const ann = response.data.annonce || response.data.data?.annonce || response.data;
+          console.log('AnnonceDetails DEBUG', { annonceId, isAdmin: isAdmin && isAdmin() });
+          if (isAdmin && isAdmin()) {
+            triedAdmin = true;
+            try {
+              response = await adminAPI.getAnnonceById(annonceId);
+              console.log('ADMIN API RESPONSE', response);
+              ann = response.data?.annonce || response.annonce || response.data || response;
+            } catch (err) {
+              console.error('ADMIN API ERROR', err);
+            }
+          }
+          if (!ann || !ann._id) {
+            // Try public API as fallback
+            try {
+              response = await annonceAPI.getById(annonceId);
+              console.log('PUBLIC API RESPONSE', response);
+              ann = response.data?.annonce || response.annonce || response.data || response;
+            } catch (err) {
+              console.error('PUBLIC API ERROR', err);
+            }
+          }
+          if (!ann || !ann._id) {
+            setAnnouncement(null);
+            setLoading(false);
+            toast.error("Impossible de charger les détails de l'annonce.");
+            return;
+          }
           setAnnouncement(ann);
         } catch (error) {
-          console.error("Erreur lors de la récupération de l'annonce:", error);
+          console.error("Erreur inattendue lors de la récupération de l'annonce:", error, { annonceId, isAdmin: isAdmin && isAdmin(), triedAdmin });
+          setAnnouncement(null);
           toast.error("Impossible de charger les détails de l'annonce.");
         } finally {
           setLoading(false);
@@ -61,7 +90,7 @@ const AnnonceDetails = ({ annonceId, onClose }) => {
       };
       fetchAnnonce();
     }
-  }, [annonceId]);
+  }, [annonceId, isAdmin]);
 
   if (loading) {
     return (

@@ -14,7 +14,11 @@ const {
   creerAdmin,
   getLogs,
   exporterDonnees,
-  getMetriques
+  getMetriques,
+  createAdminAccount,
+  getAdminProfile,
+  updateAdminProfile,
+  getAnnonceByIdAdmin
 } = require('../controllers/adminController');
 
 const { authenticate } = require('../middleware/auth');
@@ -153,6 +157,8 @@ router.delete('/annonces/:id',
   supprimerAnnonce
 );
 
+router.get('/annonces/:id', validateObjectId('id'), getAnnonceByIdAdmin);
+
 // Gestion des demandes
 router.get('/demandes', [
   query('page').optional().isInt({ min: 1 }).withMessage('Page invalide'),
@@ -238,5 +244,49 @@ router.get('/export/:type', [
     .withMessage('Date de fin invalide'),
   handleValidationErrors
 ], exporterDonnees);
+
+// Gestion du profil administrateur
+router.get('/profile', getAdminProfile);
+
+router.put('/profile', [
+  body('nom')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Le nom doit contenir entre 2 et 50 caractères'),
+  body('prenom')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Le prénom doit contenir entre 2 et 50 caractères'),
+  body('telephone')
+    .optional()
+    .matches(/^(\+212|0)[5-7][0-9]{8}$/)
+    .withMessage('Numéro de téléphone invalide'),
+  handleValidationErrors
+], updateAdminProfile);
+
+// Création d'un compte admin (réservé aux super admins)
+router.post('/create-admin', [
+  body('nom')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Le nom doit contenir entre 2 et 50 caractères'),
+  body('prenom')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Le prénom doit contenir entre 2 et 50 caractères'),
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Email invalide'),
+  body('telephone')
+    .matches(/^(\+212|0)[5-7][0-9]{8}$/)
+    .withMessage('Numéro de téléphone invalide'),
+  body('motDePasse')
+    .isLength({ min: 6 })
+    .withMessage('Le mot de passe doit contenir au moins 6 caractères'),
+  handleValidationErrors
+], createAdminAccount);
 
 module.exports = router;

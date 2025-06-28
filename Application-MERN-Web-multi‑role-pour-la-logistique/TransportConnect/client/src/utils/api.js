@@ -159,6 +159,7 @@ export const adminAPI = {
   
   // Gestion des annonces
   getAnnonces: (params) => api.get('/admin/annonces', { params }),
+  getAnnonceById: (id) => api.get(`/admin/annonces/${id}`),
   updateAnnonceStatus: (id, data) => api.put(`/admin/annonces/${id}/statut`, data),
   deleteAnnonce: (id, reason) => api.delete(`/admin/annonces/${id}`, { data: { raison: reason } }),
   

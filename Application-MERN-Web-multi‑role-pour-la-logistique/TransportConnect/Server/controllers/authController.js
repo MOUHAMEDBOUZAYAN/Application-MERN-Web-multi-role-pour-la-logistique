@@ -11,6 +11,14 @@ const register = async (req, res) => {
   try {
     const { nom, prenom, email, telephone, motDePasse, role } = req.body;
     
+    // Empêcher la création de comptes admin via l'inscription publique
+    if (role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'La création de comptes administrateur n\'est pas autorisée via l\'inscription publique'
+      });
+    }
+    
     // Vérifier si l'utilisateur existe déjà
     const existingUser = await User.findOne({ 
       $or: [

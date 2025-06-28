@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
-import { annonceAPI, demandeAPI, userAPI } from '../utils/api';
+import { annonceAPI, demandeAPI, userAPI, adminAPI } from '../utils/api';
 import { 
   Truck, 
   Package, 
@@ -162,41 +162,40 @@ const Dashboard = () => {
 
   const loadAdminData = async () => {
     try {
+      // Use admin endpoints for admin dashboard
       const [announcementsRes, demandsRes, usersRes] = await Promise.all([
-        annonceAPI.getAll({ limit: 5 }),
-        demandeAPI.getMineAsConducteur({ limit: 5 }),
-        userAPI.getAll({ limit: 10 })
+        adminAPI.getAnnonces({ limit: 5 }),
+        adminAPI.getDemandes({ limit: 5 }),
+        adminAPI.getUsers({ limit: 10 })
       ]);
 
-      // Fixed: Safely handle announcements data - check for .annonces property first
+      // Announcements
       let announcements = [];
-      if (Array.isArray(announcementsRes?.annonces)) {
-        announcements = announcementsRes.annonces;
-      } else if (Array.isArray(announcementsRes?.data?.annonces)) {
+      if (Array.isArray(announcementsRes?.data?.annonces)) {
         announcements = announcementsRes.data.annonces;
-      } else if (Array.isArray(announcementsRes)) {
-        announcements = announcementsRes;
+      } else if (Array.isArray(announcementsRes?.annonces)) {
+        announcements = announcementsRes.annonces;
       } else if (Array.isArray(announcementsRes?.data)) {
         announcements = announcementsRes.data;
+      } else if (Array.isArray(announcementsRes)) {
+        announcements = announcementsRes;
       }
-
       setRecentAnnouncements(announcements.slice(0, 5));
 
-      // Fixed: Safely handle demands data - check for .demandes property first
+      // Demands
       let demands = [];
-      if (Array.isArray(demandsRes?.demandes)) {
-        demands = demandsRes.demandes;
-      } else if (Array.isArray(demandsRes?.data?.demandes)) {
+      if (Array.isArray(demandsRes?.data?.demandes)) {
         demands = demandsRes.data.demandes;
-      } else if (Array.isArray(demandsRes)) {
-        demands = demandsRes;
+      } else if (Array.isArray(demandsRes?.demandes)) {
+        demands = demandsRes.demandes;
       } else if (Array.isArray(demandsRes?.data)) {
         demands = demandsRes.data;
+      } else if (Array.isArray(demandsRes)) {
+        demands = demandsRes;
       }
-
       setRecentDemands(demands.slice(0, 5));
-      
-      // Safely handle users data
+
+      // Users
       let totalUsers = 0;
       if (usersRes?.data?.total) {
         totalUsers = usersRes.data.total;
@@ -205,7 +204,6 @@ const Dashboard = () => {
       } else if (Array.isArray(usersRes)) {
         totalUsers = usersRes.length;
       }
-      
       setStats({
         totalUsers: totalUsers,
         totalAnnouncements: announcements.length,

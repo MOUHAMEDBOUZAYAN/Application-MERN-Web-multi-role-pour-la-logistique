@@ -448,7 +448,7 @@ const Announcements = () => {
       >
         {selectedAnnouncement && (
           <AnnonceDetails
-            announcement={selectedAnnouncement}
+            annonceId={selectedAnnouncement._id}
             onClose={() => setSelectedAnnouncement(null)}
           />
         )}

@@ -4,6 +4,7 @@ const Annonce = require('../models/Annonce');
 const Demande = require('../models/Demande');
 const Evaluation = require('../models/Evaluation');
 const { sendWelcomeAdmin } = require('../utils/emailService');
+const { generateToken } = require('../config/jwt');
 
 // @desc    Obtenir les statistiques globales de la plateforme
 // @route   GET /api/admin/dashboard
@@ -893,7 +894,7 @@ const getMetriques = async (req, res) => {
         temps_reel: {
           utilisateursConnectes,
           demandesEnCours,
-          litigesOuverts: litiges,
+          litigesOverts: litiges,
           evaluationsEnAttenteModeation: evaluationsEnAttente
         },
         aujourd_hui: {
@@ -914,6 +915,170 @@ const getMetriques = async (req, res) => {
   }
 };
 
+// @desc    Créer un compte administrateur (réservé aux super admins)
+// @route   POST /api/admin/create-admin
+// @access  Private (Admin only)
+const createAdminAccount = async (req, res) => {
+  try {
+    // Vérifier que l'utilisateur actuel est admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Accès refusé. Seuls les administrateurs peuvent créer des comptes admin.'
+      });
+    }
+
+    const { nom, prenom, email, telephone, motDePasse } = req.body;
+
+    // Vérifier si un admin existe déjà
+    const existingAdmin = await User.findOne({ role: 'admin' });
+    if (existingAdmin) {
+      return res.status(400).json({
+        success: false,
+        message: 'Un compte administrateur existe déjà. Seul un admin est autorisé.'
+      });
+    }
+
+    // Créer le compte admin
+    const admin = await User.create({
+      nom,
+      prenom,
+      email: email.toLowerCase(),
+      telephone,
+      motDePasse,
+      role: 'admin',
+      statut: 'actif',
+      emailVerifie: true
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Compte administrateur créé avec succès',
+      data: {
+        id: admin._id,
+        nom: admin.nom,
+        prenom: admin.prenom,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Erreur création admin:', error);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Un compte avec cet email existe déjà'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la création du compte administrateur'
+    });
+  }
+};
+
+// @desc    Obtenir les informations de l'admin actuel
+// @route   GET /api/admin/profile
+// @access  Private (Admin only)
+const getAdminProfile = async (req, res) => {
+  try {
+    const admin = await User.findById(req.user.id).select('-motDePasse');
+    
+    if (!admin || admin.role !== 'admin') {
+      return res.status(404).json({
+        success: false,
+        message: 'Compte administrateur non trouvé'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: admin
+    });
+
+  } catch (error) {
+    console.error('Erreur récupération profil admin:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération du profil'
+    });
+  }
+};
+
+// @desc    Modifier le profil admin
+// @route   PUT /api/admin/profile
+// @access  Private (Admin only)
+const updateAdminProfile = async (req, res) => {
+  try {
+    const { nom, prenom, telephone, adresse } = req.body;
+    
+    const admin = await User.findById(req.user.id);
+    
+    if (!admin || admin.role !== 'admin') {
+      return res.status(404).json({
+        success: false,
+        message: 'Compte administrateur non trouvé'
+      });
+    }
+
+    // Mettre à jour les champs autorisés
+    if (nom) admin.nom = nom;
+    if (prenom) admin.prenom = prenom;
+    if (telephone) admin.telephone = telephone;
+    if (adresse) admin.adresse = adresse;
+
+    await admin.save();
+
+    res.json({
+      success: true,
+      message: 'Profil administrateur mis à jour avec succès',
+      data: {
+        id: admin._id,
+        nom: admin.nom,
+        prenom: admin.prenom,
+        email: admin.email,
+        telephone: admin.telephone,
+        role: admin.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Erreur mise à jour profil admin:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la mise à jour du profil'
+    });
+  }
+};
+
+// @desc    Obtenir les détails d'une annonce (admin)
+// @route   GET /api/admin/annonces/:id
+// @access  Private (Admin only)
+const getAnnonceByIdAdmin = async (req, res) => {
+  try {
+    const rawAnnonce = await Annonce.findById(req.params.id);
+    console.log('Annonce brute:', rawAnnonce);
+    if (!rawAnnonce) {
+      return res.status(404).json({ success: false, message: "Annonce non trouvée" });
+    }
+    const annonce = await Annonce.findById(req.params.id)
+      .populate('conducteur', '-motDePasse');
+    if (!annonce) {
+      return res.status(404).json({ success: false, message: "Annonce non trouvée après populate" });
+    }
+    if (!annonce.conducteur) {
+      return res.status(500).json({ success: false, message: "Conducteur introuvable ou supprimé pour cette annonce" });
+    }
+    res.json({ success: true, annonce });
+  } catch (error) {
+    console.error('Erreur récupération annonce admin:', error);
+    res.status(500).json({ success: false, message: "Erreur lors de la récupération de l'annonce", error: error.message });
+  }
+};
+
 module.exports = {
   getDashboard,
   getUtilisateurs,
@@ -928,5 +1093,9 @@ module.exports = {
   creerAdmin,
   getLogs,
   exporterDonnees,
-  getMetriques
+  getMetriques,
+  createAdminAccount,
+  getAdminProfile,
+  updateAdminProfile,
+  getAnnonceByIdAdmin
 };
