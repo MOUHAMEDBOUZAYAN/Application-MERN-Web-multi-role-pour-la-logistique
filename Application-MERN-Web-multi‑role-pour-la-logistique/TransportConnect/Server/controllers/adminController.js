@@ -11,31 +11,50 @@ const { generateToken } = require('../config/jwt');
 // @access  Private (Admin)
 const getDashboard = async (req, res) => {
   try {
-    const [
-      statsUtilisateurs,
-      statsAnnonces,
-      statsDemandes,
-      statsEvaluations,
-      croissanceUtilisateurs,
-      revenus
-    ] = await Promise.all([
-      // Statistiques utilisateurs
-      User.statistiquesGlobales(),
-      
-      // Statistiques annonces
-      Annonce.statistiquesGlobales(),
-      
-      // Statistiques demandes
-      Demande.statistiquesGlobales(),
-      
-      // Statistiques évaluations
-      Evaluation.statistiquesGlobales(),
-      
-      // Croissance utilisateurs (12 derniers mois)
-      User.aggregate([
+    // Defensive: wrap each aggregation in try/catch and provide defaults
+    let statsUtilisateurs = {};
+    let statsAnnonces = {};
+    let statsDemandes = {};
+    let statsEvaluations = {};
+    let croissanceUtilisateurs = [];
+    let revenus = [];
+
+    // Statistiques utilisateurs
+    try {
+      statsUtilisateurs = await User.statistiquesGlobales();
+    } catch (err) {
+      console.error('Erreur statsUtilisateurs:', err);
+      statsUtilisateurs = {};
+    }
+    // Statistiques annonces
+    try {
+      statsAnnonces = await Annonce.statistiquesGlobales();
+    } catch (err) {
+      console.error('Erreur statsAnnonces:', err);
+      statsAnnonces = {};
+    }
+    // Statistiques demandes
+    try {
+      statsDemandes = await Demande.statistiquesGlobales();
+    } catch (err) {
+      console.error('Erreur statsDemandes:', err);
+      statsDemandes = {};
+    }
+    // Statistiques évaluations
+    try {
+      statsEvaluations = await Evaluation.statistiquesGlobales();
+    } catch (err) {
+      console.error('Erreur statsEvaluations:', err);
+      statsEvaluations = {};
+    }
+    // Croissance utilisateurs (12 derniers mois)
+    try {
+      croissanceUtilisateurs = await User.aggregate([
         {
           $match: {
-            createdAt: { 
+            createdAt: {
+              $exists: true,
+              $ne: null,
               $gte: new Date(new Date().setFullYear(new Date().getFullYear() - 1))
             }
           }
@@ -50,16 +69,23 @@ const getDashboard = async (req, res) => {
           }
         },
         { $sort: { '_id.annee': 1, '_id.mois': 1 } }
-      ]),
-      
-      // Revenus mensuels
-      Demande.aggregate([
+      ]);
+    } catch (err) {
+      console.error('Erreur croissanceUtilisateurs:', err);
+      croissanceUtilisateurs = [];
+    }
+    // Revenus mensuels
+    try {
+      revenus = await Demande.aggregate([
         {
           $match: {
             statut: 'livree',
-            'dates.dateLivraisonReelle': { 
+            'dates.dateLivraisonReelle': {
+              $exists: true,
+              $ne: null,
               $gte: new Date(new Date().setFullYear(new Date().getFullYear() - 1))
-            }
+            },
+            'tarification.montantAccepte': { $exists: true, $ne: null }
           }
         },
         {
@@ -73,37 +99,44 @@ const getDashboard = async (req, res) => {
           }
         },
         { $sort: { '_id.annee': 1, '_id.mois': 1 } }
-      ])
-    ]);
-    
+      ]);
+    } catch (err) {
+      console.error('Erreur revenus:', err);
+      revenus = [];
+    }
+
     // Activité récente
-    const activiteRecente = await Promise.all([
-      User.find({ statut: 'actif' })
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .select('nom prenom email role createdAt'),
-      
-      Annonce.find({ statut: 'active' })
-        .populate('conducteur', 'nom prenom')
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .select('titre trajet conducteur createdAt'),
-      
-      Demande.find()
-        .populate('expediteur', 'nom prenom')
-        .populate('conducteur', 'nom prenom')
-        .sort({ 'dates.dateCreation': -1 })
-        .limit(5)
-        .select('statut expediteur conducteur dates')
-    ]);
-    
+    let activiteRecente = [[], [], []];
+    try {
+      activiteRecente = await Promise.all([
+        User.find({ statut: 'actif' })
+          .sort({ createdAt: -1 })
+          .limit(5)
+          .select('nom prenom email role createdAt'),
+        Annonce.find({ statut: 'active' })
+          .populate('conducteur', 'nom prenom')
+          .sort({ createdAt: -1 })
+          .limit(5)
+          .select('titre trajet conducteur createdAt'),
+        Demande.find()
+          .populate('expediteur', 'nom prenom')
+          .populate('conducteur', 'nom prenom')
+          .sort({ 'dates.dateCreation': -1 })
+          .limit(5)
+          .select('statut expediteur conducteur dates')
+      ]);
+    } catch (err) {
+      console.error('Erreur activiteRecente:', err);
+      activiteRecente = [[], [], []];
+    }
+
     res.json({
       success: true,
       data: {
         statistiques: {
           utilisateurs: statsUtilisateurs,
           annonces: statsAnnonces,
-          demandes: statsDemandes,
+          demandes: statsDemandes || {},
           evaluations: statsEvaluations
         },
         croissance: {
@@ -117,12 +150,13 @@ const getDashboard = async (req, res) => {
         }
       }
     });
-    
   } catch (error) {
     console.error('Erreur dashboard admin:', error);
+    if (error.stack) console.error(error.stack);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la récupération du tableau de bord'
+      message: 'Erreur lors de la récupération du tableau de bord',
+      error: error.message
     });
   }
 };

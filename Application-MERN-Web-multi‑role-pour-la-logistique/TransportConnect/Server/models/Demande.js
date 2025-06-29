@@ -559,23 +559,19 @@ demandeSchema.statics.statistiquesGlobales = async function() {
         litiges: {
           $sum: { $cond: ['$litige.signale', 1, 0] }
         },
-        montantTotalTransporte: { $sum: '$tarification.montantAccepte' },
-        poidsTotal: { $sum: '$colis.poids' },
-        volumeTotal: { $sum: '$colis.volume' },
-        tauxAcceptation: {
-          $multiply: [
-            { $divide: [
-              { $sum: { $cond: [{ $eq: ['$statut', 'acceptee'] }, 1, 0] } },
-              { $sum: { $cond: [{ $ne: ['$statut', 'en_attente'] }, 1, 0] } }
-            ]},
-            100
-          ]
-        }
+        montantTotalTransporte: { $sum: { $ifNull: ['$tarification.montantAccepte', 0] } },
+        poidsTotal: { $sum: { $ifNull: ['$colis.poids', 0] } },
+        volumeTotal: { $sum: { $ifNull: ['$colis.volume', 0] } },
+        totalAcceptees: { $sum: { $cond: [{ $eq: ['$statut', 'acceptee'] }, 1, 0] } },
+        totalHorsAttente: { $sum: { $cond: [{ $ne: ['$statut', 'en_attente'] }, 1, 0] } }
       }
     }
   ]);
-  
-  return stats[0] || {};
+  const result = stats[0] || {};
+  result.tauxAcceptation = (result.totalHorsAttente && result.totalHorsAttente > 0)
+    ? (result.totalAcceptees || 0) * 100 / result.totalHorsAttente
+    : 0;
+  return result;
 };
 
 demandeSchema.statics.statistiquesParPeriode = async function(dateDebut, dateFin) {

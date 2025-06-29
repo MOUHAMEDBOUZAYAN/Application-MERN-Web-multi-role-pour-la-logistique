@@ -20,6 +20,11 @@ const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout, isAdmin, isConductor, isSender } = useAuth();
   const location = useLocation();
 
+  // Hide sidebar on home page
+  if (location.pathname === '/') {
+    return null;
+  }
+
   const isActivePath = (path) => {
     return location.pathname === path || location.pathname.startsWith(path);
   };
@@ -108,10 +113,8 @@ const Sidebar = ({ isOpen, onClose }) => {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 lg:relative lg:translate-x-0 ${
-        isOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        
+      <div className={`z-50 bg-white shadow-xl border-r border-gray-200 transform transition-transform duration-300 ease-in-out overflow-y-auto pt-0 fixed left-0 top-0 min-h-full w-64 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:fixed lg:left-0 lg:top-0 lg:min-h-full lg:w-64`}>
+        {/* If you use custom colors like bg-primary-100, ensure they're defined in your Tailwind config */}
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center space-x-2">
@@ -120,7 +123,6 @@ const Sidebar = ({ isOpen, onClose }) => {
             </div>
             <span className="font-bold text-gray-900">TransportConnect</span>
           </div>
-          
           <button
             onClick={onClose}
             className="lg:hidden p-1 rounded-md hover:bg-gray-100"

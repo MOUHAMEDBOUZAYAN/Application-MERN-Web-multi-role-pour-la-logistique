@@ -32,6 +32,7 @@
     "multer": "^2.0.1",
     "nodemailer": "^7.0.3",
     "postcss": "^8.5.6",
+    "recharts": "^3.0.2",
     "socket.io": "^4.8.1",
     "tailwindcss": "^4.1.10"
   },

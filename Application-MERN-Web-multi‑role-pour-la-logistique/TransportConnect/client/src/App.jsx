@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
-// import Sidebar from './components/common/Sidebar';
+import Sidebar from './components/common/Sidebar';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
@@ -111,93 +111,103 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+function AppContent() {
+  const location = useLocation();
+  const showSidebar = location.pathname !== '/';
+  return (
+    <>
+      <Sidebar />
+      <div className={`flex flex-col min-h-screen transition-all duration-300 ${showSidebar ? 'lg:ml-64' : ''}`}>
+        <Header />
+        <div className="flex flex-1">
+          <main className="flex-1 p-4 bg-gray-50">
+            <Routes>
+              {/* Routes Publiques */}
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/annonces" element={<Annonces />} />
+              <Route path="/annonces/:id" element={<AnnonceDetails />} />
+              
+              {/* Routes Protégées */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/demandes" element={
+                <ProtectedRoute>
+                  <Demandes />
+                </ProtectedRoute>
+              } />
+              <Route path="/demandes/:id" element={
+                <ProtectedRoute>
+                  <DemandeDetails />
+                </ProtectedRoute>
+              } />
+              <Route path="/my-annonces" element={
+                <ProtectedRoute>
+                  <MyAnnonces />
+                </ProtectedRoute>
+              } />
+              <Route path="/create-annonce" element={
+                <ProtectedRoute>
+                  <AnnonceFormPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/edit-annonce/:id" element={
+                <ProtectedRoute>
+                  <AnnonceFormPage />
+                </ProtectedRoute>
+              } />
+
+              {/* Routes Admin */}
+              <Route path="/admin/*" element={
+                <AdminRoute>
+                  <Admin />
+                </AdminRoute>
+              } />
+              
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </main>
+        </div>
+        <Footer />
+        <Toaster 
+          position="top-center" 
+          reverseOrder={false}
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 3000,
+              theme: {
+                primary: 'green',
+                secondary: 'black',
+              },
+            },
+          }}
+        />
+      </div>
+    </>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <SocketProvider>
           <Router>
-            <div className="flex flex-col min-h-screen">
-              <Header />
-              <div className="flex flex-1">
-                {/* <Sidebar /> */}
-                <main className="flex-1 p-4 bg-gray-50">
-                  <Routes>
-                    {/* Routes Publiques */}
-                    <Route path="/" element={<Home />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/annonces" element={<Annonces />} />
-                    <Route path="/annonces/:id" element={<AnnonceDetails />} />
-                    
-                    {/* Routes Protégées */}
-                    <Route path="/dashboard" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/profile" element={
-                      <ProtectedRoute>
-                        <Profile />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/demandes" element={
-                      <ProtectedRoute>
-                        <Demandes />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/demandes/:id" element={
-                      <ProtectedRoute>
-                        <DemandeDetails />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/my-annonces" element={
-                      <ProtectedRoute>
-                        <MyAnnonces />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/create-annonce" element={
-                      <ProtectedRoute>
-                        <AnnonceFormPage />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/edit-annonce/:id" element={
-                      <ProtectedRoute>
-                        <AnnonceFormPage />
-                      </ProtectedRoute>
-                    } />
-
-                    {/* Routes Admin */}
-                    <Route path="/admin/*" element={
-                      <AdminRoute>
-                        <Admin />
-                      </AdminRoute>
-                    } />
-                    
-                    <Route path="*" element={<Navigate to="/" />} />
-                  </Routes>
-                </main>
-              </div>
-              <Footer />
-              <Toaster 
-                position="top-center" 
-                reverseOrder={false}
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: '#363636',
-                    color: '#fff',
-                  },
-                  success: {
-                    duration: 3000,
-                    theme: {
-                      primary: 'green',
-                      secondary: 'black',
-                    },
-                  },
-                }}
-              />
-            </div>
+            <AppContent />
           </Router>
         </SocketProvider>
       </AuthProvider>
