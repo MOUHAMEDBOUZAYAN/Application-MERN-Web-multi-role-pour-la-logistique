@@ -5,7 +5,8 @@ const annonceSchema = new mongoose.Schema({
   conducteur: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Le conducteur est requis']
+    required: [true, 'Le conducteur est requis'],
+    index: true
   },
   titre: {
     type: String,
@@ -282,7 +283,8 @@ const annonceSchema = new mongoose.Schema({
       ref: 'User'
     },
     raisonSuspension: String
-  }
+  },
+  dateCreation: { type: Date, default: Date.now }
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -326,8 +328,7 @@ annonceSchema.virtual('tempsRestant').get(function() {
 
 // Middleware pre-save pour calculer le volume et mettre à jour les stats
 annonceSchema.pre('save', function(next) {
-  // Calculer le volume maximal
-  if (this.capacite && this.capacite.dimensionsMax) {
+  if (this.isModified('capacite.dimensionsMax')) {
     const { longueur, largeur, hauteur } = this.capacite.dimensionsMax;
     this.capacite.volumeMax = longueur * largeur * hauteur;
   }
@@ -349,9 +350,13 @@ annonceSchema.pre('save', function(next) {
 });
 
 // Méthodes d'instance
-annonceSchema.methods.incrementerVues = function() {
-  this.statistiques.nombreVues += 1;
-  return this.save();
+annonceSchema.methods.incrementerVues = async function() {
+  // S'assurer que 'statistiques' existe
+  if (!this.statistiques) {
+    this.statistiques = { nombreVues: 0, nombreDemandes: 0 };
+  }
+  this.statistiques.nombreVues = (this.statistiques.nombreVues || 0) + 1;
+  await this.save({ timestamps: false }); // Éviter de mettre à jour updatedAt
 };
 
 annonceSchema.methods.ajouterDemande = function() {

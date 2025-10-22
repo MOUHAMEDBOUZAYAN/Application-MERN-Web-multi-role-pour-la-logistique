@@ -3,6 +3,9 @@
 // Middleware pour vérifier les rôles d'utilisateur
 const requireRole = (...roles) => {
   return (req, res, next) => {
+    console.log(`[${new Date().toISOString()}] - ENTER requireRole for route: ${req.originalUrl}`);
+    const startTime = Date.now();
+    console.log(`[${new Date().toISOString()}] - requireRole: Vérification pour le rôle '${req.user?.role}' sur la route ${req.originalUrl}`);
     try {
       // Vérifier si l'utilisateur est authentifié
       if (!req.user) {
@@ -20,6 +23,7 @@ const requireRole = (...roles) => {
         });
       }
       
+      console.log(`[${new Date().toISOString()}] - requireRole: Vérification réussie. Temps écoulé: ${Date.now() - startTime}ms`);
       next();
     } catch (error) {
       console.error('Erreur middleware requireRole:', error);
@@ -41,7 +45,13 @@ const requireConducteur = requireRole('conducteur');
 const requireExpediteur = requireRole('expediteur');
 
 // Middleware pour conducteurs et expéditeurs (utilisateurs normaux)
-const requireUser = requireRole('conducteur', 'expediteur');
+const requireUser = (...args) => {
+  return (req, res, next) => {
+    console.log(`[${new Date().toISOString()}] - ENTER requireUser for route: ${req.originalUrl}`);
+    const middleware = requireRole('conducteur', 'expediteur');
+    return middleware(req, res, next);
+  };
+};
 
 // Middleware pour vérifier les permissions d'annonce
 const authorizeAnnonceAccess = (req, res, next) => {

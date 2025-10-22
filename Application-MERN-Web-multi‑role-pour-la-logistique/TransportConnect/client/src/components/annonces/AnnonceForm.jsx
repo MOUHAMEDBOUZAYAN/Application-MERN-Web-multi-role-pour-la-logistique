@@ -53,6 +53,13 @@ const PAYMENT_METHODS = {
   carte_bancaire: 'Carte bancaire'
 };
 
+const STATUS_OPTIONS = {
+  active: 'Active',
+  inactive: 'Inactive',
+  complete: 'Terminée',
+  annulee: 'Annulée'
+};
+
 // Fonctions utilitaires
 const formatDate = (date) => {
   if (!date) return '';
@@ -67,29 +74,35 @@ const formatDate = (date) => {
 const mapExistingAnnouncement = (announcement) => {
   if (!announcement) return null;
 
-  return {
-    lieuDepart: announcement.lieuDepart || announcement.trajet?.depart?.ville || '',
-    destination: announcement.destination || announcement.trajet?.destination?.ville || '',
-    etapesIntermediaires: announcement.etapesIntermediaires || announcement.trajet?.etapesIntermediaires || [],
-    dateDepart: announcement.dateDepart || announcement.planning?.dateDepart 
-      ? new Date(announcement.dateDepart || announcement.planning?.dateDepart).toISOString().split('T')[0] 
+  // Assurer que les étapes intermédiaires sont un tableau de chaînes (villes)
+  const etapes = (announcement.trajet?.etapesIntermediaires || [])
+    .map(e => e.ville || e) // Prend la ville si c'est un objet, sinon la chaîne
+    .filter(Boolean); // Filtre les valeurs nulles ou vides
+
+  const mappedData = {
+    lieuDepart: announcement.trajet?.depart?.ville || '',
+    destination: announcement.trajet?.destination?.ville || '',
+    etapesIntermediaires: etapes,
+    dateDepart: announcement.planning?.dateDepart 
+      ? new Date(announcement.planning.dateDepart).toISOString().split('T')[0] 
       : '',
-    heureDepart: announcement.heureDepart || announcement.planning?.heureDepart || '',
-    typeMarchandise: announcement.typeMarchandise || 
-      (Array.isArray(announcement.typesMarchandise) ? announcement.typesMarchandise[0] : announcement.typesMarchandise) || '',
-    capaciteDisponible: announcement.capaciteDisponible || announcement.capacite?.poidsMax || '',
-    dimensionsMax: announcement.dimensionsMax || 
-      (announcement.capacite?.dimensionsMax ? 
-        `${announcement.capacite.dimensionsMax.longueur}x${announcement.capacite.dimensionsMax.largeur}x${announcement.capacite.dimensionsMax.hauteur}` : ''),
-    prix: announcement.prix || announcement.tarification?.prix || announcement.tarification?.prixFixe || '',
+    heureDepart: announcement.planning?.heureDepart || '',
+    typeMarchandise: Array.isArray(announcement.typesMarchandise) ? announcement.typesMarchandise[0] : (announcement.typesMarchandise || ''),
+    capaciteDisponible: announcement.capacite?.poidsMax || '',
+    dimensionsMax: announcement.capacite?.dimensionsMax 
+      ? `${announcement.capacite.dimensionsMax.longueur}x${announcement.capacite.dimensionsMax.largeur}x${announcement.capacite.dimensionsMax.hauteur}` 
+      : '',
+    prix: announcement.tarification?.prixFixe || announcement.tarification?.prixParKg || '',
     vehiculeType: announcement.vehicule?.type || 'camionnette',
     vehiculeMarque: announcement.vehicule?.marque || '',
     vehiculeModele: announcement.vehicule?.modele || '',
-    description: announcement.description || announcement.details?.description || '',
-    instructionsSpeciales: announcement.instructionsSpeciales || announcement.details?.instructionsSpeciales || '',
-    status: announcement.status || announcement.statut || 'active',
+    description: announcement.description || '',
+    instructionsSpeciales: announcement.conditions?.instructionsSpeciales || '',
+    statut: announcement.statut || 'active',
     paiementAccepte: announcement.conditions?.paiementAccepte || ['especes']
   };
+
+  return mappedData;
 };
 
 const AnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
@@ -120,7 +133,7 @@ const AnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
       vehiculeModele: '',
       description: '',
       instructionsSpeciales: '',
-      status: 'active',
+      statut: 'active',
       paiementAccepte: ['especes']
     };
   });
@@ -269,7 +282,7 @@ const AnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
           description: formData.description,
           instructionsSpeciales: formData.instructionsSpeciales
         },
-        statut: formData.status || 'active',
+        statut: formData.statut,
         conditions: {
           paiementAccepte: formData.paiementAccepte
         }
@@ -426,18 +439,15 @@ const AnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
           </p>
         ) : (
           <div className="space-y-3">
-            {formData.etapesIntermediaires.map((step, index) => (
+            {formData.etapesIntermediaires.map((etape, index) => (
               <div key={index} className="flex items-center space-x-3">
-                <select
-                  value={step}
+                <input
+                  type="text"
+                  placeholder={`Étape ${index + 1}`}
+                  value={etape}
                   onChange={(e) => updateIntermediateStep(index, e.target.value)}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Sélectionner une ville</option>
-                  {CITIES.map(city => (
-                    <option key={city} value={city}>{city}</option>
-                  ))}
-                </select>
+                />
                 <button
                   type="button"
                   onClick={() => removeIntermediateStep(index)}
@@ -752,18 +762,20 @@ const AnnouncementForm = ({ announcement, onSubmit, onCancel }) => {
         </div>
 
         {isEditing && (
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <div className="form-group">
+            <label htmlFor="statut" className="form-label flex items-center">
+              <Info className="h-4 w-4 mr-2" />
               Statut de l'annonce
             </label>
             <select
-              value={formData.status}
-              onChange={(e) => handleInputChange('status', e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl transition-all duration-200 focus:ring-4 focus:ring-blue-100 focus:border-blue-500"
+              id="statut"
+              value={formData.statut}
+              onChange={(e) => handleInputChange('statut', e.target.value)}
+              className="form-input"
             >
-              <option value="active">Active (visible par les expéditeurs)</option>
-              <option value="inactive">Inactive (masquée)</option>
-              <option value="completed">Terminée</option>
+              {Object.entries(STATUS_OPTIONS).map(([key, value]) => (
+                <option key={key} value={key}>{value}</option>
+              ))}
             </select>
           </div>
         )}

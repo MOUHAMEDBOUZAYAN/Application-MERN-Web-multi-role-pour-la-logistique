@@ -3,6 +3,7 @@ const Annonce = require('../models/Annonce');
 const User = require('../models/User');
 const Demande = require('../models/Demande');
 const { sendNotification } = require('../utils/emailService');
+const mongoose = require('mongoose');
 
 // @desc    Créer une nouvelle annonce
 // @route   POST /api/annonces
@@ -178,13 +179,15 @@ const getAnnonces = async (req, res) => {
 // @access  Public
 const getAnnonce = async (req, res) => {
   try {
-    const annonce = await Annonce.findById(req.params.id)
+    const annonceId = req.params.id;
+    const annonce = await Annonce.findById(annonceId)
       .populate('conducteur', 'nom prenom photo badges statistiques telephone')
       .populate({
         path: 'commentaires.utilisateur',
         select: 'nom prenom photo'
-      });
-    
+      })
+      .lean();
+
     if (!annonce) {
       return res.status(404).json({
         success: false,
@@ -192,16 +195,21 @@ const getAnnonce = async (req, res) => {
       });
     }
     
-    // Incrémenter le nombre de vues (seulement si pas le propriétaire)
-    if (!req.user || req.user._id.toString() !== annonce.conducteur._id.toString()) {
-      await annonce.incrementerVues();
+    // N'incrémente pas les vues si le propriétaire de l'annonce la consulte
+    const isOwner = req.user && req.user._id.toString() === annonce.conducteur?._id.toString();
+
+    if (!isOwner) {
+      await Annonce.updateOne(
+        { _id: annonceId },
+        { $inc: { 'statistiques.nombreVues': 1 } }
+      );
     }
-    
+
     res.json({
       success: true,
-      data: { annonce }
+      data: annonce
     });
-    
+
   } catch (error) {
     console.error('Erreur récupération annonce:', error);
     res.status(500).json({
@@ -216,63 +224,40 @@ const getAnnonce = async (req, res) => {
 // @access  Private (Propriétaire ou Admin)
 const updateAnnonce = async (req, res) => {
   try {
-    const annonce = await Annonce.findById(req.params.id);
-    
+    const annonceId = req.params.id;
+    const { status, ...otherData } = req.body;
+
+    // 1. Vérifier l'existence de l'annonce et les permissions
+    const annonce = await Annonce.findById(annonceId).select('conducteur').lean();
     if (!annonce) {
-      return res.status(404).json({
-        success: false,
-        message: 'Annonce non trouvée'
-      });
+      return res.status(404).json({ success: false, message: 'Annonce non trouvée' });
     }
-    
-    // Vérifier les permissions
     if (annonce.conducteur.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Non autorisé à modifier cette annonce'
-      });
+      return res.status(403).json({ success: false, message: 'Non autorisé' });
+    }
+
+    // 2. Si seule la mise à jour du statut est demandée, utiliser une méthode directe.
+    if (status && Object.keys(otherData).length === 0) {
+      await Annonce.updateOne({ _id: annonceId }, { $set: { statut: status } });
+    } else {
+      // 3. Pour les autres mises à jour, appliquer les données
+      await Annonce.updateOne({ _id: annonceId }, { $set: req.body });
     }
     
-    // Certains champs ne peuvent pas être modifiés s'il y a des demandes acceptées
-    const demandesAcceptees = await Demande.countDocuments({
-      annonce: annonce._id,
-      statut: { $in: ['acceptee', 'en_cours', 'enlevee', 'en_transit'] }
-    });
-    
-    if (demandesAcceptees > 0) {
-      // Restreindre les modifications
-      const champsInterdits = ['trajet', 'planning.dateDepart', 'capacite', 'tarification'];
-      const modifications = Object.keys(req.body);
-      const modificationInterdite = modifications.some(champ => 
-        champsInterdits.some(interdit => champ.startsWith(interdit))
-      );
-      
-      if (modificationInterdite) {
-        return res.status(400).json({
-          success: false,
-          message: 'Impossible de modifier le trajet, la date, la capacité ou la tarification avec des demandes acceptées'
-        });
-      }
-    }
-    
-    // Mettre à jour l'annonce
-    Object.assign(annonce, req.body);
-    await annonce.save();
-    
-    await annonce.populate('conducteur', 'nom prenom photo badges');
-    
+    // 4. Récupérer l'annonce mise à jour pour la renvoyer
+    const updatedAnnonce = await Annonce.findById(annonceId)
+      .populate('conducteur', 'nom prenom photo badges')
+      .lean();
+
     res.json({
       success: true,
       message: 'Annonce mise à jour avec succès',
-      data: { annonce }
+      annonce: updatedAnnonce,
     });
-    
+
   } catch (error) {
     console.error('Erreur mise à jour annonce:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la mise à jour de l\'annonce'
-    });
+    res.status(500).json({ success: false, message: 'Erreur interne du serveur' });
   }
 };
 
@@ -336,68 +321,28 @@ const deleteAnnonce = async (req, res) => {
   }
 };
 
-// @desc    Obtenir les annonces du conducteur connecté
-// @route   GET /api/annonces/mes-annonces
-// @access  Private (Conducteur)
+// @desc    Obtenir les annonces de l'utilisateur connecté
+// @route   GET /api/annonces/mes-annonces/liste
+// @access  Private (Conducteur ou Expediteur)
 const getMesAnnonces = async (req, res) => {
+  const startTime = Date.now();
+  console.log(`[${new Date().toISOString()}] - getMesAnnonces: Début du traitement pour l'utilisateur ${req.user._id}`);
   try {
-    const {
-      page = 1,
-      limit = 10,
-      statut,
-      sort = '-createdAt'
-    } = req.query;
-    
-    const filter = { conducteur: req.user._id };
-    if (statut) filter.statut = statut;
-    
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    const [annonces, total] = await Promise.all([
-      Annonce.find(filter)
-        .sort(sort)
-        .skip(skip)
-        .limit(parseInt(limit))
-        .lean(),
-      Annonce.countDocuments(filter)
-    ]);
-    
-    // Ajouter le nombre de demandes pour chaque annonce
-    const annoncesAvecStats = await Promise.all(
-      annonces.map(async (annonce) => {
-        const nombreDemandes = await Demande.countDocuments({ annonce: annonce._id });
-        const demandesEnAttente = await Demande.countDocuments({ 
-          annonce: annonce._id, 
-          statut: 'en_attente' 
-        });
-        
-        return {
-          ...annonce,
-          nombreDemandes,
-          demandesEnAttente
-        };
-      })
-    );
-    
+    console.log(`[${new Date().toISOString()}] - getMesAnnonces: Interrogation de la base de données...`);
+    const annonces = await Annonce.find({ conducteur: req.user._id })
+      .populate('conducteur', 'nom prenom photo badges')
+      .sort({ createdAt: -1 })
+      .lean();
+    console.log(`[${new Date().toISOString()}] - getMesAnnonces: Récupération de ${annonces.length} annonces depuis la base de données. Temps écoulé: ${Date.now() - startTime}ms`);
     res.json({
       success: true,
-      data: {
-        annonces: annoncesAvecStats,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / parseInt(limit)),
-          totalItems: total,
-          itemsPerPage: parseInt(limit)
-        }
-      }
+      annonces: annonces,
     });
-    
+    console.log(`[${new Date().toISOString()}] - getMesAnnonces: Réponse envoyée. Temps total: ${Date.now() - startTime}ms`);
   } catch (error) {
-    console.error('Erreur récupération mes annonces:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la récupération de vos annonces'
-    });
+    const totalTime = Date.now() - startTime;
+    console.error(`[${new Date().toISOString()}] - getMesAnnonces: Erreur après ${totalTime}ms.`, error);
+    res.status(500).json({ success: false, message: 'Erreur interne du serveur' });
   }
 };
 

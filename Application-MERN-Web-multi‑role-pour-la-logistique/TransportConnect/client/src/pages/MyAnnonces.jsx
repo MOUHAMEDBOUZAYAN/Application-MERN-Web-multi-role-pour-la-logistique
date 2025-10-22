@@ -20,6 +20,13 @@ import AnnonceDetails from '../components/annonces/AnnonceDetails';
 import Modal, { ConfirmationModal } from '../components/common/Modal';
 import toast from 'react-hot-toast';
 
+const STATUS_OPTIONS = {
+  active: 'Active',
+  inactive: 'Inactive',
+  complete: 'Terminée',
+  annulee: 'Annulée'
+};
+
 const MyAnnouncements = () => {
   const { user } = useAuth();
   const [announcements, setAnnouncements] = useState([]);
@@ -106,16 +113,30 @@ const MyAnnouncements = () => {
     }
   };
 
+  const handleStatusChange = async (annonceId, newStatut) => {
+    try {
+      const response = await annonceAPI.update(annonceId, { statut: newStatut });
+      const updatedAnnonce = response.annonce || response.data;
+      if (!updatedAnnonce) {
+        throw new Error("La réponse de l'API ne contient pas l'annonce mise à jour.");
+      }
+      setAnnouncements(prev => prev.map(ann => (ann._id === annonceId ? updatedAnnonce : ann)));
+      toast.success('Statut de l\'annonce mis à jour !');
+    } catch (error) {
+      console.error("Erreur lors du changement de statut:", error);
+      toast.error('Impossible de mettre à jour le statut.');
+    }
+  };
+
   const getFilteredAnnouncements = () => {
     const safeAnnouncements = Array.isArray(announcements) ? announcements : [];
-    
     switch (activeTab) {
       case 'active':
-        return safeAnnouncements.filter(ann => ann.status === 'active');
+        return safeAnnouncements.filter(ann => ann.statut === 'active');
       case 'inactive':
-        return safeAnnouncements.filter(ann => ann.status === 'inactive');
-      case 'completed':
-        return safeAnnouncements.filter(ann => ann.status === 'completed');
+        return safeAnnouncements.filter(ann => ann.statut === 'inactive');
+      case 'complete':
+        return safeAnnouncements.filter(ann => ann.statut === 'complete');
       default:
         return safeAnnouncements;
     }
@@ -123,12 +144,11 @@ const MyAnnouncements = () => {
 
   const getTabCounts = () => {
     const safeAnnouncements = Array.isArray(announcements) ? announcements : [];
-    
     return {
       all: safeAnnouncements.length,
-      active: safeAnnouncements.filter(ann => ann.status === 'active').length,
-      inactive: safeAnnouncements.filter(ann => ann.status === 'inactive').length,
-      completed: safeAnnouncements.filter(ann => ann.status === 'completed').length
+      active: safeAnnouncements.filter(ann => ann.statut === 'active').length,
+      inactive: safeAnnouncements.filter(ann => ann.statut === 'inactive').length,
+      complete: safeAnnouncements.filter(ann => ann.statut === 'complete').length
     };
   };
 
@@ -172,7 +192,7 @@ const MyAnnouncements = () => {
             { key: 'all', label: 'Toutes', count: tabCounts.all },
             { key: 'active', label: 'Actives', count: tabCounts.active },
             { key: 'inactive', label: 'Inactives', count: tabCounts.inactive },
-            { key: 'completed', label: 'Terminées', count: tabCounts.completed }
+            { key: 'complete', label: 'Terminées', count: tabCounts.complete }
           ].map((tab) => (
               <button
               key={tab.key}
@@ -226,9 +246,18 @@ const MyAnnouncements = () => {
             <div key={announcement._id} className="card hover:shadow-lg transition-shadow">
               {/* Status Badge */}
               <div className="flex items-center justify-between mb-4">
-                <span className={`badge badge-${getStatusColor(announcement.status)}`}>
-                  {getStatusLabel(announcement.status)}
-                </span>
+                <select
+                  value={announcement.statut}
+                  onChange={(e) => handleStatusChange(announcement._id, e.target.value)}
+                  className={`badge-select badge-${getStatusColor(announcement.statut)}`}
+                  onClick={(e) => e.stopPropagation()} // Empêche l'ouverture du modal
+                >
+                  {Object.entries(STATUS_OPTIONS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setSelectedAnnouncement(announcement)}
@@ -252,18 +281,18 @@ const MyAnnouncements = () => {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-        </div>
+              </div>
 
               {/* Route */}
-        <div className="mb-4">
+              <div className="mb-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <MapPin className="h-4 w-4 text-gray-400" />
                   <span className="text-sm font-medium text-gray-900">
                     {announcement.lieuDepart || announcement.trajet?.depart?.ville} → {announcement.destination || announcement.trajet?.destination?.ville}
-              </span>
-            </div>
-            
-          {announcement.etapesIntermediaires && announcement.etapesIntermediaires.length > 0 && (
+                  </span>
+                </div>
+                
+                {announcement.etapesIntermediaires && announcement.etapesIntermediaires.length > 0 && (
                   <p className="text-xs text-gray-500 ml-6">
                     Via: {announcement.etapesIntermediaires.slice(0, 2).join(', ')}
                     {announcement.etapesIntermediaires.length > 2 && ` +${announcement.etapesIntermediaires.length - 2}`}
@@ -281,8 +310,8 @@ const MyAnnouncements = () => {
                       <Clock className="h-4 w-4" />
                       <span>{announcement.heureDepart}</span>
                     </>
-          )}
-        </div>
+                  )}
+                </div>
 
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center space-x-2">
@@ -290,7 +319,7 @@ const MyAnnouncements = () => {
                     <span className="text-gray-700">
                       {announcement.typeMarchandise || (Array.isArray(announcement.typesMarchandise) ? announcement.typesMarchandise[0] : '')}
                     </span>
-          </div>
+                  </div>
                   <span className="font-medium text-gray-900">
                     {announcement.capaciteDisponible || announcement.capacite?.poidsMax}kg
                   </span>
@@ -313,16 +342,16 @@ const MyAnnouncements = () => {
                     </span>
                     <span className="text-gray-600">
                       {announcement.vuesCount || 0} vue{(announcement.vuesCount || 0) !== 1 ? 's' : ''}
-            </span>
-      </div>
+                    </span>
+                  </div>
 
-                  {announcement.status === 'active' && (
+                  {announcement.statut === 'active' && (
                     <div className="flex items-center space-x-1 text-green-600">
                       <CheckCircle className="h-4 w-4" />
                       <span className="text-xs">Publié</span>
-    </div>
+                    </div>
                   )}
-      </div>
+                </div>
               </div>
             </div>
           ))}
@@ -358,20 +387,16 @@ const MyAnnouncements = () => {
         )}
       </Modal>
 
-      {/* View Details Modal */}
-      <Modal
-        isOpen={!!selectedAnnouncement}
-        onClose={() => setSelectedAnnouncement(null)}
-        title="Détails de l'annonce"
-        size="large"
-      >
-        {selectedAnnouncement && (
-          <AnnonceDetails
-            announcement={selectedAnnouncement}
-            onClose={() => setSelectedAnnouncement(null)}
-          />
-        )}
-      </Modal>
+      {/* View Announcement Details Modal */}
+      {selectedAnnouncement && (
+        <Modal
+          isOpen={!!selectedAnnouncement}
+          onClose={() => setSelectedAnnouncement(null)}
+          title="Détails de l'annonce"
+        >
+          <AnnonceDetails annonceId={selectedAnnouncement?._id} />
+        </Modal>
+      )}
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal

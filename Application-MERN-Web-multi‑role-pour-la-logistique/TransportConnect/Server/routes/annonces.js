@@ -15,6 +15,7 @@ const {
 const { authenticate, optionalAuthenticate, authorize } = require('../middleware/auth');
 const { 
   requireConducteur, 
+  requireUser,
   authorizeAnnonceAccess, 
   requireAdmin,
   authorizeStatsAccess 
@@ -40,20 +41,19 @@ router.get('/:id', validateObjectId('id'), optionalAuthenticate, getAnnonce);
 router.use(authenticate); // Toutes les routes suivantes nécessitent une authentification
 
 // Routes pour les conducteurs
-router.post('/', requireConducteur, authorizeAnnonceAccess, validateCreateAnnonce, createAnnonce);
-router.get('/mes-annonces/liste', requireConducteur, getMesAnnonces);
+router.post('/', requireConducteur, validateCreateAnnonce, createAnnonce);
+router.get('/mes-annonces/liste', requireUser, getMesAnnonces);
 
-// Routes pour propriétaires d'annonces
+// Routes pour propriétaires d'annonces ou admin
 router.put('/:id', 
   validateObjectId('id'), 
-  authorize(Annonce, 'id', 'conducteur'), 
-  validateCreateAnnonce, 
+  authorizeAnnonceAccess, 
   updateAnnonce
 );
 
 router.delete('/:id', 
   validateObjectId('id'), 
-  authorize(Annonce, 'id', 'conducteur'), 
+  authorizeAnnonceAccess, 
   deleteAnnonce
 );
 

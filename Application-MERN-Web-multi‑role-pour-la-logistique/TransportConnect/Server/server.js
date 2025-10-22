@@ -24,7 +24,7 @@ const server = createServer(app);
 // Configuration Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3001", "http://localhost:5173"],
+    origin: ["http://localhost:3001", "http://localhost:5173", "http://localhost:5174"],
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -52,7 +52,7 @@ app.use(limiter);
 
 // Middleware CORS
 app.use(cors({
-  origin: ["http://localhost:3001", "http://localhost:5173"],
+  origin: ["http://localhost:3001", "http://localhost:5173", "http://localhost:5174"],
   credentials: true,
   optionsSuccessStatus: 200
 }));
@@ -88,6 +88,17 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV
   });
+});
+
+// Test DB route for diagnostics
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const Annonce = require('./models/Annonce');
+    const count = await Annonce.countDocuments();
+    res.json({ count });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Gestion des erreurs 404

@@ -5,6 +5,8 @@ const { verifyToken } = require('../config/jwt');
 
 // Middleware pour vérifier l'authentification
 const authenticate = async (req, res, next) => {
+  const startTime = Date.now();
+  console.log(`[${new Date().toISOString()}] - Authenticate: Début pour la route ${req.originalUrl}`);
   try {
     let token;
     
@@ -26,8 +28,7 @@ const authenticate = async (req, res, next) => {
       const decoded = verifyToken(token);
       
       // Récupérer l'utilisateur depuis la base de données
-      const user = await User.findById(decoded.id)
-        .select('+motDePasse'); // Inclure le mot de passe pour les vérifications
+      const user = await User.findById(decoded.id);
       
       if (!user) {
         return res.status(401).json({
@@ -54,6 +55,7 @@ const authenticate = async (req, res, next) => {
       
       // Ajouter l'utilisateur à la requête
       req.user = user;
+      console.log(`[${new Date().toISOString()}] - Authenticate: Utilisateur ${user._id} authentifié. Temps écoulé: ${Date.now() - startTime}ms`);
       next();
       
     } catch (jwtError) {

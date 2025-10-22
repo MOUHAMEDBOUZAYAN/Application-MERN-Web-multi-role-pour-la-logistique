@@ -38,10 +38,10 @@ const Demands = () => {
       
       if (isConductor()) {
         // Load demands received for conductor's announcements
-        response = await demandeAPI.getAll({ conducteur: user._id });
+        response = await demandeAPI.getMineAsConducteur();
       } else {
         // Load demands sent by the sender
-        response = await demandeAPI.getUserDemands();
+        response = await demandeAPI.getMineAsExpediteur();
       }
       
       setDemands(response.data.data || response.data);
@@ -55,7 +55,7 @@ const Demands = () => {
 
   const handleAcceptDemand = async (demandId) => {
     try {
-      await demandeAPI.accept(demandId);
+      await demandeAPI.respond(demandId, { statut: 'accepted' });
       setDemands(prev => 
         prev.map(demand => 
           demand._id === demandId 
@@ -72,7 +72,7 @@ const Demands = () => {
 
   const handleRejectDemand = async (demandId) => {
     try {
-      await demandeAPI.reject(demandId);
+      await demandeAPI.respond(demandId, { statut: 'rejected' });
       setDemands(prev => 
         prev.map(demand => 
           demand._id === demandId 
@@ -89,7 +89,7 @@ const Demands = () => {
 
   const handleCompleteDemand = async (demandId) => {
     try {
-      await demandeAPI.complete(demandId);
+      await demandeAPI.updateStatus(demandId, { statut: 'completed' });
       setDemands(prev => 
         prev.map(demand => 
           demand._id === demandId 

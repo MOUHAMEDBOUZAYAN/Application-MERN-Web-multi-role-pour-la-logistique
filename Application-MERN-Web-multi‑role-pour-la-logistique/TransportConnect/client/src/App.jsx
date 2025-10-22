@@ -113,10 +113,13 @@ class ErrorBoundary extends React.Component {
 
 function AppContent() {
   const location = useLocation();
-  const showSidebar = location.pathname !== '/';
+  const { isAuthenticated } = useAuth();
+
+  const showSidebar = isAuthenticated && !['/login', '/register', '/'].includes(location.pathname);
+
   return (
     <>
-      <Sidebar />
+      {showSidebar && <Sidebar />}
       <div className={`flex flex-col min-h-screen transition-all duration-300 ${showSidebar ? 'lg:ml-64' : ''}`}>
         <Header />
         <div className="flex flex-1">
