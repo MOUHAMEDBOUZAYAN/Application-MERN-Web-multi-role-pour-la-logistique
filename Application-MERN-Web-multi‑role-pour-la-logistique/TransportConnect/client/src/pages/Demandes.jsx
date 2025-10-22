@@ -44,10 +44,23 @@ const Demands = () => {
         response = await demandeAPI.getMineAsExpediteur();
       }
       
-      setDemands(response.data.data || response.data);
+      // S'assurer que nous avons un tableau
+      let demandsData = response.data || response;
+      if (demandsData && demandsData.data) {
+        demandsData = demandsData.data;
+      }
+      
+      // Vérifier que c'est bien un tableau
+      if (Array.isArray(demandsData)) {
+        setDemands(demandsData);
+      } else {
+        console.warn('API returned non-array data:', demandsData);
+        setDemands([]);
+      }
     } catch (error) {
       console.error('Error loading demands:', error);
       toast.error('Erreur lors du chargement des demandes');
+      setDemands([]);
     } finally {
       setLoading(false);
     }
@@ -105,7 +118,8 @@ const Demands = () => {
   };
 
   const getFilteredDemands = () => {
-    let filtered = demands;
+    // S'assurer que demands est un tableau
+    let filtered = Array.isArray(demands) ? demands : [];
 
     // Filter by tab
     if (activeTab !== 'all') {
@@ -133,12 +147,15 @@ const Demands = () => {
   };
 
   const getTabCounts = () => {
+    // S'assurer que demands est un tableau
+    const demandsArray = Array.isArray(demands) ? demands : [];
+    
     return {
-      all: demands.length,
-      pending: demands.filter(d => d.status === 'pending').length,
-      accepted: demands.filter(d => d.status === 'accepted').length,
-      rejected: demands.filter(d => d.status === 'rejected').length,
-      completed: demands.filter(d => d.status === 'completed').length
+      all: demandsArray.length,
+      pending: demandsArray.filter(d => d.status === 'pending').length,
+      accepted: demandsArray.filter(d => d.status === 'accepted').length,
+      rejected: demandsArray.filter(d => d.status === 'rejected').length,
+      completed: demandsArray.filter(d => d.status === 'completed').length
     };
   };
 
