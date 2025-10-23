@@ -78,6 +78,13 @@ const createDemande = async (req, res) => {
     }
     
     // Créer la demande
+    console.log('Creating demande with data:', JSON.stringify({
+      ...demandeData,
+      expediteur: req.user._id,
+      conducteur: annonce.conducteur._id,
+      annonce: annonceId
+    }, null, 2));
+    
     const demande = await Demande.create({
       ...demandeData,
       expediteur: req.user._id,
@@ -127,9 +134,29 @@ const createDemande = async (req, res) => {
     
   } catch (error) {
     console.error('Erreur création demande:', error);
+    
+    // Handle validation errors specifically
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Erreur de validation des données',
+        errors: errors
+      });
+    }
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Une demande existe déjà pour cette annonce'
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la création de la demande'
+      message: 'Erreur lors de la création de la demande',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

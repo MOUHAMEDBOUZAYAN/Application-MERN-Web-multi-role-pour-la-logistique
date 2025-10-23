@@ -138,27 +138,79 @@ const AnnonceDetails = ({ annonceId, onClose }) => {
   const handleSendDemand = async () => {
     try {
       setSending(true);
-      await demandeAPI.create({
+      
+      // Prepare demand data with proper structure according to the Demande model
+      const demandData = {
         annonce: announcement._id,
-        expediteur: user._id,
-        message: demandMessage || `Demande pour le transport de ${announcement.trajet.depart.ville} vers ${announcement.trajet.destination.ville}`,
-        typeColis: 'Colis standard',
-        poids: 5,
-        dimensions: '30x30x30 cm'
-      });
+        colis: {
+          description: demandMessage || `Colis standard pour transport de ${announcement.trajet?.depart?.ville || announcement.lieuDepart} vers ${announcement.trajet?.destination?.ville || announcement.destination}`,
+          dimensions: {
+            longueur: 30,
+            largeur: 30,
+            hauteur: 30
+          },
+          poids: 5,
+          type: 'autre', // Must be one of the enum values
+          valeurDeclaree: 0,
+          fragile: false
+        },
+        adresses: {
+          enlevement: {
+            nom: user?.prenom + ' ' + user?.nom || 'Nom expéditeur',
+            telephone: user?.telephone || '0000000000',
+            adresse: 'Adresse d\'enlèvement à préciser',
+            ville: announcement.trajet?.depart?.ville || announcement.lieuDepart || 'Ville départ',
+            codePostal: '00000',
+            instructions: 'Instructions d\'enlèvement à préciser'
+          },
+          livraison: {
+            nom: 'Nom destinataire',
+            telephone: '0000000000',
+            adresse: 'Adresse de livraison à préciser',
+            ville: announcement.trajet?.destination?.ville || announcement.destination || 'Ville destination',
+            codePostal: '00000',
+            instructions: 'Instructions de livraison à préciser'
+          }
+        },
+        tarification: {
+          montantPropose: 50, // Montant proposé par défaut
+          devise: 'MAD',
+          methodePaiement: 'especes' // Must be one of the enum values
+        }
+      };
+      
+      console.log('Sending demand data:', JSON.stringify(demandData, null, 2));
+      
+      const response = await demandeAPI.create(demandData);
+      console.log('Demand creation response:', response);
       
       toast.success('Demande envoyée avec succès !');
       setShowDemandModal(false);
       onClose(annonceId);
     } catch (error) {
-      toast.error('Erreur lors de l\'envoi de la demande');
+      console.error('Error creating demand:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Erreur inconnue';
+      toast.error('Erreur lors de l\'envoi de la demande: ' + errorMessage);
     } finally {
       setSending(false);
     }
   };
 
   const canSendDemand = () => {
-    return isSender() && announcement.conducteur._id !== user._id && announcement.status === 'active';
+    // Debug logging
+    console.log('canSendDemand check:', {
+      isSender: isSender(),
+      userRole: user?.role,
+      userId: user?._id,
+      conductorId: announcement?.conducteur?._id,
+      announcementStatus: announcement?.status,
+      isNotOwnAnnouncement: announcement?.conducteur?._id !== user?._id,
+      isActive: announcement?.status === 'active'
+    });
+    
+    return isSender() && 
+           announcement?.conducteur?._id !== user?._id && 
+           (announcement?.status === 'active' || announcement?.statut === 'active');
   };
 
   const tabs = [
@@ -248,7 +300,7 @@ const AnnonceDetails = ({ annonceId, onClose }) => {
               </div>
             </div>
             
-            {canSendDemand() && (
+            {canSendDemand() ? (
               <div className="flex flex-col space-y-3">
                 <button
                   onClick={() => setShowDemandModal(true)}
@@ -260,6 +312,18 @@ const AnnonceDetails = ({ annonceId, onClose }) => {
                 
                 <div className="text-center">
                   <span className="text-blue-200 text-sm">Réponse sous 24h garantie</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col space-y-3">
+                <div className="bg-gray-100 text-gray-600 px-8 py-4 rounded-2xl text-center">
+                  <MessageCircle className="h-5 w-5 mx-auto mb-2" />
+                  <span className="text-sm">
+                    {!isSender() ? 'Seuls les expéditeurs peuvent envoyer des demandes' :
+                     announcement?.conducteur?._id === user?._id ? 'Vous ne pouvez pas faire une demande sur votre propre annonce' :
+                     announcement?.status !== 'active' && announcement?.statut !== 'active' ? 'Cette annonce n\'est plus disponible' :
+                     'Impossible d\'envoyer une demande'}
+                  </span>
                 </div>
               </div>
             )}

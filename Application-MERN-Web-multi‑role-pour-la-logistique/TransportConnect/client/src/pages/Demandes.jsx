@@ -46,8 +46,18 @@ const Demands = () => {
       
       // S'assurer que nous avons un tableau
       let demandsData = response.data || response;
-      if (demandsData && demandsData.data) {
-        demandsData = demandsData.data;
+      
+      // L'API retourne { success: true, data: { demandes: [...] } }
+      if (demandsData && demandsData.data && demandsData.data.demandes) {
+        demandsData = demandsData.data.demandes;
+      } else if (demandsData && demandsData.demandes) {
+        demandsData = demandsData.demandes;
+      } else if (Array.isArray(demandsData)) {
+        // Si c'est déjà un tableau
+        demandsData = demandsData;
+      } else {
+        console.warn('API returned unexpected data structure:', demandsData);
+        demandsData = [];
       }
       
       // Vérifier que c'est bien un tableau

@@ -71,16 +71,45 @@ const Announcements = () => {
 
       // Handle the response structure based on your backend
       let announcementData = [];
+      
+      // Debug: Log the full response structure
+      console.log('Full response structure:', JSON.stringify(response, null, 2));
+      
       if (response && response.success && response.data) {
         if (Array.isArray(response.data.annonces)) {
           announcementData = response.data.annonces;
         } else if (Array.isArray(response.data)) {
           announcementData = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          announcementData = response.data.data;
         }
       } else if (response && Array.isArray(response.annonces)) {
         announcementData = response.annonces;
       } else if (Array.isArray(response)) {
         announcementData = response;
+      } else if (response && response.data && Array.isArray(response.data)) {
+        announcementData = response.data;
+      }
+      
+      // Fallback: if still no data, try to extract from any array in response
+      if (announcementData.length === 0 && response) {
+        const findArrayInObject = (obj) => {
+          for (const key in obj) {
+            if (Array.isArray(obj[key])) {
+              return obj[key];
+            }
+            if (typeof obj[key] === 'object' && obj[key] !== null) {
+              const found = findArrayInObject(obj[key]);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        
+        const foundArray = findArrayInObject(response);
+        if (foundArray) {
+          announcementData = foundArray;
+        }
       }
       
       console.log('Processed announcements:', announcementData);
