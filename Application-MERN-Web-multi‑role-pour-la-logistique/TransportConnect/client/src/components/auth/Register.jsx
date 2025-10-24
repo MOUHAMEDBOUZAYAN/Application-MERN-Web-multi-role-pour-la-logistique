@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   Eye, 
   EyeOff, 
@@ -138,52 +138,83 @@ const Register = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mx-auto w-full max-w-md">
-          <div className="flex justify-center">
-            <div className="relative">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 rounded-2xl shadow-lg">
-                <Truck className="h-10 w-10 text-white" />
+    <div className="min-h-screen bg-gray-100 flex">
+      {/* Section gauche - Image décorative */}
+      <div className="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+        {/* Logo */}
+        <div className="absolute top-8 left-8">
+          <div className="flex items-center space-x-2">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+              <Truck className="w-6 h-6 text-blue-600" />
+            </div>
+            <span className="text-2xl font-bold text-white">TransportConnect</span>
+          </div>
               </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center">
-                <CheckCircle className="h-4 w-4 text-white" />
+
+        {/* Bouton retour */}
+        <div className="absolute top-8 right-8">
+          <Link 
+            to="/" 
+            className="bg-black/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-black/30 transition-colors inline-block"
+          >
+            Retour au site →
+          </Link>
               </div>
+
+        {/* Contenu décoratif */}
+        <div className="flex flex-col justify-center items-center text-center px-12">
+          <div className="mb-8">
+            <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center mb-6">
+              <Truck className="w-16 h-16 text-white" />
             </div>
           </div>
           
-          <h2 className="mt-8 text-center text-4xl font-bold text-gray-900">
-            Créer votre compte
+          <h2 className="text-4xl font-bold text-white mb-4">
+            Créez votre compte
           </h2>
-          <p className="mt-3 text-center text-base text-gray-600">
-            Rejoignez TransportConnect et commencez dès aujourd'hui
+          <h2 className="text-4xl font-bold text-white mb-6">
+            professionnel
+          </h2>
+          
+          <p className="text-white/80 text-lg mb-8">
+            Rejoignez notre plateforme et commencez à optimiser votre logistique dès aujourd'hui
           </p>
-          <div className="mt-4 text-center">
-            <span className="text-sm text-gray-500">Déjà un compte ? </span>
-            <button 
-            onClick={() => navigate("/login")}
-            className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
-              Connectez-vous
-            </button>
+
+          {/* Indicateurs */}
+          <div className="flex space-x-2">
+            <div className="w-2 h-2 bg-white rounded-full"></div>
+            <div className="w-2 h-2 bg-white/50 rounded-full"></div>
+            <div className="w-2 h-2 bg-white/50 rounded-full"></div>
           </div>
         </div>
+      </div>
 
-        {/* Main Form */}
-        <div className="mt-10 mx-auto w-full max-w-lg">
-          <div className="bg-white/90 backdrop-blur-sm py-10 px-6 shadow-2xl rounded-3xl border border-white/20">
-            <form onSubmit={handleSubmit} className="space-y-8">
+      {/* Section droite - Formulaire */}
+      <div className="flex-1 lg:w-3/5 bg-gray-900 flex flex-col justify-center px-8 lg:px-16 py-12">
+        <div className="max-w-md mx-auto w-full mt-8 mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Créer un compte</h1>
+          <p className="text-gray-400 mb-8">
+            Déjà un compte ?{' '}
+            <button 
+            onClick={() => navigate("/login")}
+              className="text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Connectez-vous
+            </button>
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
               {/* Role Selection */}
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-4">
+              <label className="block text-sm font-medium text-gray-300 mb-3">
                   Je suis un...
                 </label>
-                <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                   {roleOptions.map((role) => {
                     const Icon = role.icon;
                     return (
                       <div key={role.value}>
-                        <label className="cursor-pointer group">
+                      <label className="cursor-pointer">
                           <input
                             type="radio"
                             name="role"
@@ -192,31 +223,15 @@ const Register = () => {
                             onChange={(e) => handleInputChange('role', e.target.value)}
                             className="sr-only"
                           />
-                          <div className={`relative border-2 rounded-2xl p-5 transition-all duration-300 transform group-hover:scale-105 ${
-                            selectedRole === role.value
-                              ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-blue-100 shadow-lg'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}>
-                            <div className="flex items-center space-x-4">
-                              <div className={`p-3 rounded-xl shadow-lg ${
-                                role.value === 'conducteur' 
-                                  ? 'bg-gradient-to-r from-blue-500 to-blue-600' 
-                                  : 'bg-gradient-to-r from-emerald-500 to-emerald-600'
-                              }`}>
-                                <Icon className="h-6 w-6 text-white" />
-                              </div>
-                              <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                  {role.label}
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-1">
-                                  {role.description}
-                                </p>
-                              </div>
-                              {selectedRole === role.value && (
-                                <CheckCircle className="h-6 w-6 text-blue-500" />
-                              )}
-                            </div>
+                        <div className={`border-2 p-3 text-center transition-all duration-300 ${
+                          selectedRole === role.value
+                            ? 'border-blue-500 bg-blue-500/10'
+                            : 'border-gray-700 hover:border-gray-600 bg-gray-800'
+                        }`}>
+                          <Icon className={`h-5 w-5 mx-auto mb-1 ${
+                            role.value === 'conducteur' ? 'text-blue-400' : 'text-green-400'
+                          }`} />
+                          <div className="text-xs font-medium text-white">{role.label}</div>
                           </div>
                         </label>
                       </div>
@@ -224,41 +239,33 @@ const Register = () => {
                   })}
                 </div>
                 {errors.role && (
-                  <p className="mt-2 text-sm text-red-600 flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-1" />
-                    {errors.role}
-                  </p>
+                <p className="mt-1 text-sm text-red-400">{errors.role}</p>
                 )}
               </div>
 
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="prenom" className="block text-sm font-medium text-gray-700">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                     Prénom
                   </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
                       id="prenom"
                       type="text"
                       value={formData.prenom}
                       onChange={(e) => handleInputChange('prenom', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-3 rounded-xl border transition-all duration-200 focus:ring-4 focus:ring-opacity-20 ${
-                        errors.prenom 
-                          ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
-                          : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
-                      }`}
+                  className={`w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                    errors.prenom ? 'border-red-500 focus:ring-red-500' : ''
+                  }`}
                       placeholder="Votre prénom"
                     />
-                  </div>
                   {errors.prenom && (
-                    <p className="text-xs text-red-600">{errors.prenom}</p>
+                  <p className="text-sm text-red-400 mt-1">{errors.prenom}</p>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="nom" className="block text-sm font-medium text-gray-700">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                     Nom
                   </label>
                   <input
@@ -266,155 +273,113 @@ const Register = () => {
                     type="text"
                     value={formData.nom}
                     onChange={(e) => handleInputChange('nom', e.target.value)}
-                    className={`w-full px-4 py-3 rounded-xl border transition-all duration-200 focus:ring-4 focus:ring-opacity-20 ${
-                      errors.nom 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
-                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
-                    }`}
+                  className={`w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                    errors.nom ? 'border-red-500 focus:ring-red-500' : ''
+                  }`}
                     placeholder="Votre nom"
                   />
                   {errors.nom && (
-                    <p className="text-xs text-red-600">{errors.nom}</p>
+                  <p className="text-sm text-red-400 mt-1">{errors.nom}</p>
                   )}
                 </div>
               </div>
 
               {/* Email Field */}
-              <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                   Adresse email
                 </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     id="email"
                     type="email"
                     autoComplete="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 rounded-xl border transition-all duration-200 focus:ring-4 focus:ring-opacity-20 ${
-                      errors.email 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
-                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
-                    }`}
+                className={`w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                  errors.email ? 'border-red-500 focus:ring-red-500' : ''
+                }`}
                     placeholder="votre@email.com"
                   />
-                </div>
                 {errors.email && (
-                  <p className="text-xs text-red-600">{errors.email}</p>
+                <p className="text-sm text-red-400 mt-1">{errors.email}</p>
                 )}
               </div>
 
               {/* Phone Field */}
-              <div className="space-y-2">
-                <label htmlFor="telephone" className="block text-sm font-medium text-gray-700">
-                  Numéro de téléphone
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Téléphone
                 </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     id="telephone"
                     type="tel"
                     value={formData.telephone}
                     onChange={(e) => handleInputChange('telephone', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 rounded-xl border transition-all duration-200 focus:ring-4 focus:ring-opacity-20 ${
-                      errors.telephone 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
-                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
-                    }`}
+                className={`w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                  errors.telephone ? 'border-red-500 focus:ring-red-500' : ''
+                }`}
                     placeholder="+212 6XX XX XX XX"
                   />
-                </div>
                 {errors.telephone && (
-                  <p className="text-xs text-red-600">{errors.telephone}</p>
+                <p className="text-sm text-red-400 mt-1">{errors.telephone}</p>
                 )}
               </div>
 
               {/* Password Field */}
-              <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                   Mot de passe
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
-                    className={`w-full pl-10 pr-12 py-3 rounded-xl border transition-all duration-200 focus:ring-4 focus:ring-opacity-20 ${
-                      errors.password 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
-                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
-                    }`}
+                  className={`w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                    errors.password ? 'border-red-500 focus:ring-red-500' : ''
+                  }`}
                     placeholder="Votre mot de passe"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
-                
-                {/* Password Strength */}
-                {formData.password && (
-                  <div className="mt-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full transition-all duration-300 ${
-                            passwordStrength.type === 'error' ? 'bg-red-500' :
-                            passwordStrength.type === 'warning' ? 'bg-yellow-500' : 'bg-green-500'
-                          }`}
-                          style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
-                        ></div>
-                      </div>
-                      <span className={`text-xs font-medium ${
-                        passwordStrength.type === 'error' ? 'text-red-600' :
-                        passwordStrength.type === 'warning' ? 'text-yellow-600' : 'text-green-600'
-                      }`}>
-                        {passwordStrength.message}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                
                 {errors.password && (
-                  <p className="text-xs text-red-600">{errors.password}</p>
+                <p className="text-sm text-red-400 mt-1">{errors.password}</p>
                 )}
               </div>
 
               {/* Confirm Password Field */}
-              <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                   Confirmer le mot de passe
                 </label>
                 <div className="relative">
-                  <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     id="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                    className={`w-full pl-10 pr-12 py-3 rounded-xl border transition-all duration-200 focus:ring-4 focus:ring-opacity-20 ${
-                      errors.confirmPassword 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
-                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
-                    }`}
+                  className={`w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                    errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : ''
+                  }`}
                     placeholder="Confirmer votre mot de passe"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
                   >
                     {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-xs text-red-600">{errors.confirmPassword}</p>
+                <p className="text-sm text-red-400 mt-1">{errors.confirmPassword}</p>
                 )}
               </div>
 
@@ -425,84 +390,73 @@ const Register = () => {
                   type="checkbox"
                   checked={formData.acceptTerms}
                   onChange={(e) => handleInputChange('acceptTerms', e.target.checked)}
-                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-800"
                 />
-                <label htmlFor="acceptTerms" className="text-sm text-gray-700">
+              <label htmlFor="acceptTerms" className="text-sm text-gray-300">
                   J'accepte les{' '}
-                  <button className="text-blue-600 hover:text-blue-500 font-medium">
+                <button className="text-blue-400 hover:text-blue-300 font-medium">
                     conditions d'utilisation
                   </button>{' '}
                   et la{' '}
-                  <button className="text-blue-600 hover:text-blue-500 font-medium">
+                <button className="text-blue-400 hover:text-blue-300 font-medium">
                     politique de confidentialité
                   </button>
                 </label>
               </div>
               {errors.acceptTerms && (
-                <p className="text-xs text-red-600 ml-7">{errors.acceptTerms}</p>
+              <p className="text-sm text-red-400">{errors.acceptTerms}</p>
               )}
 
               {/* Submit Button */}
-              <div>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full flex justify-center items-center space-x-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-4 px-6 rounded-2xl text-lg hover:shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? (
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : (
-                    <span>Créer mon compte</span>
-                  )}
-                  {!isLoading && <ArrowRight className="h-5 w-5" />}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Création en cours...' : 'Créer un compte'}
                 </button>
-              </div>
 
               {/* Error Display */}
               {errors.root && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                  <p className="text-sm text-red-600">{errors.root}</p>
+              <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-3">
+                <p className="text-sm text-red-400">{errors.root}</p>
                 </div>
               )}
             </form>
 
-            {/* Features for Selected Role */}
-            {selectedRole && (
-              <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-100">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                  En tant que {roleOptions.find(r => r.value === selectedRole)?.label}, vous pourrez :
-                </h4>
-                <div className="grid gap-3">
-                  {roleOptions.find(r => r.value === selectedRole)?.features.map((feature, index) => (
-                    <div key={index} className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"></div>
-                      <span className="text-sm text-gray-700">{feature}</span>
-                    </div>
-                  ))}
-                </div>
+          {/* Social Login */}
+          <div className="mt-8 mb-8">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-700"></div>
               </div>
-            )}
-          </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-900 text-gray-400">Ou inscrivez-vous avec</span>
+              </div>
+            </div>
 
-          {/* Security Note */}
-          <div className="mt-8 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6">
-            <div className="flex items-start space-x-4">
-              <div className="p-2 bg-emerald-100 rounded-lg">
-                <Shield className="h-6 w-6 text-emerald-600" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-emerald-800 mb-1">
-                  Sécurité garantie
-                </h3>
-                <p className="text-sm text-emerald-700">
-                  Vos données sont protégées par un chiffrement de niveau bancaire. 
-                  Nous respectons votre vie privée et ne partagerons jamais vos informations.
-                </p>
-              </div>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                className="w-full inline-flex justify-center py-2.5 px-4 border border-gray-700 shadow-sm bg-gray-800 text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors"
+              >
+                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Google
+              </button>
+              <button
+                type="button"
+                className="w-full inline-flex justify-center py-2.5 px-4 border border-gray-700 shadow-sm bg-gray-800 text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors"
+              >
+                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+                Facebook
+              </button>
             </div>
           </div>
         </div>

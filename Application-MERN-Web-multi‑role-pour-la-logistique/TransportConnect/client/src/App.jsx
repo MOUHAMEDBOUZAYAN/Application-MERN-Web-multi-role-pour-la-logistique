@@ -116,14 +116,15 @@ function AppContent() {
   const { isAuthenticated } = useAuth();
 
   const showSidebar = isAuthenticated && !['/login', '/register', '/'].includes(location.pathname);
+  const isAuthPage = ['/login', '/register'].includes(location.pathname);
 
   return (
     <>
       {showSidebar && <Sidebar />}
       <div className={`flex flex-col min-h-screen transition-all duration-300 ${showSidebar ? 'lg:ml-64' : ''}`}>
-        <Header />
+        {!isAuthPage && <Header />}
         <div className="flex flex-1">
-          <main className="flex-1 p-4 bg-gray-50">
+          <main className={`flex-1 ${isAuthPage ? '' : 'p-4 bg-gray-50'}`}>
             <Routes>
               {/* Routes Publiques */}
               <Route path="/" element={<Home />} />
@@ -180,7 +181,7 @@ function AppContent() {
             </Routes>
           </main>
         </div>
-        <Footer />
+        {!isAuthPage && <Footer />}
         <Toaster 
           position="top-center" 
           reverseOrder={false}
